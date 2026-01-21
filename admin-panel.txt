@@ -1,0 +1,129 @@
+1️⃣ Joueur (Player)
+
+godmode on/off → rend le joueur invincible.
+
+set hp <valeur> → change la vie du joueur.
+
+set max_hp <valeur> → change la vie maximale du joueur.
+
+set speed <valeur> → change la vitesse de déplacement.
+
+set jump <valeur> → change la puissance du saut.
+
+set dash <valeur> → change la vitesse de dash.
+
+tp <x> <y> → téléporte le joueur aux coordonnées X,Y.
+
+heal → soigne le joueur à full.
+
+reset_player → réinitialise le joueur.
+
+parry on/off → active/désactive le parry.
+
+charge <valeur> → fixe le pourcentage de charge de l’attaque.
+
+basic_attack → force un coup de base.
+
+release_charge → lance un attaque chargée avec la charge actuelle.
+
+2️⃣ Boss
+
+kill boss → tue instantanément le boss.
+
+boss_hp <valeur> → change la vie du boss.
+
+boss phase1 → force le boss en phase 1.
+
+boss phase2 → force le boss en phase 2.
+
+boss reset → réinitialise le boss.
+
+boss teleport <x> <y> → téléporte le boss.
+
+boss invincible on/off → rend le boss invincible pour tests.
+
+boss fireball → spawn immédiat d’un ou plusieurs fireballs.
+
+boss laser → spawn immédiat d’un laser.
+
+boss shockwave → spawn un shockwave.
+
+boss summon_minions <nombre> → fait spawn un nombre de minions.
+
+boss cooldowns reset → reset tous les cooldowns du boss.
+
+boss phase <1/2> → change la phase et ajuste les cooldowns automatiquement.
+
+3️⃣ Projectiles & Attaques
+
+spawn lava → crée une zone de lave sous le joueur.
+
+spawn fireball → génère un ou plusieurs fireballs.
+
+spawn shockwave → génère un shockwave.
+
+spawn charged_attack → spawn une attaque chargée.
+
+spawn minion → génère un minion à proximité du joueur ou boss.
+
+spawn orb → génère un Healing Orb.
+
+spawn temp_wall → génère un mur temporaire.
+
+laser → spawn un laser à la position du joueur.
+
+clear projectiles → supprime tous les projectiles à l’écran.
+
+clear minions → supprime tous les minions.
+
+clear fire → supprime toutes les zones de feu.
+
+4️⃣ Healing Orbs & Zones
+
+spawn orb → spawn une Healing Orb.
+
+spawn lava → spawn une zone de feu/lave.
+
+clear orbs → supprime tous les orbs.
+
+clear fire → supprime toutes les zones de feu.
+
+5️⃣ Camera & Map
+
+camera <x> <y> → positionne la caméra à X,Y.
+
+camera follow on/off → active/désactive le suivi du joueur.
+
+teleport player <x> <y> → même que tp.
+
+teleport boss <x> <y> → téléporte le boss.
+
+6️⃣ Game State
+
+win → déclenche victoire immédiate.
+
+lose → déclenche game over.
+
+restart → relance le jeu depuis le début.
+
+pause on/off → pause ou reprend le jeu.
+
+frame <valeur> → avance le jeu d’un certain nombre de frames (pour tests).
+
+7️⃣ Debug & Test
+
+list → affiche l’état complet (HP joueur/boss, projectiles, minions…).
+
+debug on/off → active le mode debug (affiche rectangles, timers, etc.).
+
+spawn random → spawn aléatoire de minions, fire, orb, projectile pour test.
+
+reset cooldowns → reset tous les cooldowns du joueur et boss.
+
+gravity <valeur> → change la gravité globale du joueur ou minions.
+
+spawn platform <x> <y> <w> <h> → génère une plateforme temporaire.
+
+clear platforms → supprime toutes les plateformes temporaires.
+
+speed multiplier <valeur> → multiplie la vitesse du joueur pour tests.
