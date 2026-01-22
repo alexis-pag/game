@@ -58,3 +58,7 @@ pause on/off - Pause le jeu
 camera <x> <y> - Positionne la caméra
 camera follow on/off - Active/désactive le suivi
 debug on/off - Affiche hitboxes et stats
+
+currency <amount> - Set currency to exact amount
+give <amount> - Add currency to current total (new command)
+Example: give 500 adds 500 credits
