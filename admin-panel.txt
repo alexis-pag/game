@@ -69,3 +69,6 @@ unlock_all - Unlock all shop items
 boss_phase2 - Activate Boss Phase 2
 logout - Exit admin panel
 help - Show commands list
+
+reset❌ Deleted✅ Reset to 0✅ All removed✅ Restarted
+reset_save❌ Deleted✅ Reset to 0✅ All removed❌ Not affected
