@@ -1,6 +1,8 @@
 import pygame
 import random
 import math
+import json
+import os
 from enum import Enum
 
 pygame.init()
@@ -18,19 +20,416 @@ ORANGE = (255, 165, 0)
 YELLOW = (255, 255, 0)
 GREEN = (0, 255, 0)
 BLUE = (100, 149, 237)
+GRAY = (128, 128, 128)
+DARK_GRAY = (50, 50, 50)
 
 class GameState(Enum):
+    MAIN_MENU = 0
     START_MENU = 1
     PLAYING = 2
     GAME_OVER = 3
     VICTORY = 4
+    PAUSED = 5
+    SHOP = 6
+    SETTINGS = 7
+
+class Item:
+    def __init__(self, name, item_type, level, price, damage=0, hp_bonus=0, description=""):
+        self.name = name
+        self.type = item_type
+        self.level = level
+        self.price = price
+        self.damage = damage
+        self.hp_bonus = hp_bonus
+        self.description = description
+        self.owned = False
+        self.equipped = False
+    
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'type': self.type,
+            'level': self.level,
+            'owned': self.owned,
+            'equipped': self.equipped
+        }
+    
+    @staticmethod
+    def from_dict(data, items_catalog):
+        for item in items_catalog:
+            if item.name == data['name']:
+                item.owned = data['owned']
+                item.equipped = data['equipped']
+                return item
+        return None
+
+class SaveManager:
+    def __init__(self):
+        self.save_file = "game_meta_save.json"
+    
+    def save_meta_progression(self, currency, items):
+        """Save ONLY meta progression data - never runtime state"""
+        # Extract only owned items and their equipped status
+        owned_items = []
+        for item in items:
+            if item.owned:
+                owned_items.append({
+                    'name': item.name,
+                    'type': item.type,
+                    'level': item.level,
+                    'equipped': item.equipped
+                })
+        
+        # Find highest unlocked tiers
+        highest_armor = 0
+        highest_weapon = 0
+        default_armor = None
+        default_weapon = None
+        
+        for item_data in owned_items:
+            if item_data['type'] == 'armor':
+                highest_armor = max(highest_armor, item_data['level'])
+                if item_data['equipped']:
+                    default_armor = item_data['name']
+            elif item_data['type'] in ['sword', 'weapon']:
+                highest_weapon = max(highest_weapon, item_data['level'])
+                if item_data['equipped']:
+                    default_weapon = item_data['name']
+        
+        meta_data = {
+            'total_credits': currency,
+            'owned_items': owned_items,
+            'highest_armor_tier': highest_armor,
+            'highest_weapon_tier': highest_weapon,
+            'default_armor': default_armor,
+            'default_weapon': default_weapon,
+            # Meta unlocks
+            'unlocked_boss_phases': []  # Could add phase unlocks here
+        }
+        
+        try:
+            with open(self.save_file, 'w') as f:
+                json.dump(meta_data, f, indent=4)
+            return True
+        except Exception as e:
+            print(f"Meta save error: {e}")
+            return False
+    
+    def load_meta_progression(self, items_catalog):
+        """Load ONLY meta progression data - never runtime state"""
+        if not os.path.exists(self.save_file):
+            return None
+        
+        try:
+            with open(self.save_file, 'r') as f:
+                meta_data = json.load(f)
+            
+            # Restore item ownership and equipped status
+            for item_data in meta_data['owned_items']:
+                for item in items_catalog:
+                    if item.name == item_data['name']:
+                        item.owned = True
+                        item.equipped = item_data['equipped']
+                        break
+            
+            return meta_data
+        except Exception as e:
+            print(f"Meta load error: {e}")
+            return None
+    
+    def save_exists(self):
+        return os.path.exists(self.save_file)
+    
+    def delete_save(self):
+        """Delete the save file - used for complete reset"""
+        try:
+            if os.path.exists(self.save_file):
+                os.remove(self.save_file)
+            return True
+        except Exception as e:
+            print(f"Delete save error: {e}")
+            return False
+
+class Shop:
+    def __init__(self):
+        self.items = []
+        self.selected_index = 0
+        self.scroll_offset = 0
+        self.max_visible = 5
+        
+        # Initialize shop items
+        self.init_items()
+    
+    def init_items(self):
+        # Armors (5 levels)
+        armor_hp = [50, 100, 200, 350, 500]
+        armor_prices = [100, 300, 600, 1200, 2500]
+        for i in range(5):
+            self.items.append(Item(
+                f"Armor Lv{i+1}",
+                "armor",
+                i+1,
+                armor_prices[i],
+                hp_bonus=armor_hp[i],
+                description=f"Max HP: {armor_hp[i]}"
+            ))
+        
+        # Swords (5 levels)
+        sword_dmg = [2, 5, 10, 15, 20]
+        sword_prices = [150, 400, 800, 1500, 3000]
+        for i in range(5):
+            self.items.append(Item(
+                f"Sword Lv{i+1}",
+                "sword",
+                i+1,
+                sword_prices[i],
+                damage=sword_dmg[i],
+                description=f"Damage: {sword_dmg[i]}"
+            ))
+        
+        # Crossbow
+        self.items.append(Item(
+            "Crossbow",
+            "weapon",
+            1,
+            2000,
+            damage=5,
+            description="Charge: 5-25 dmg, Long range, Slow charge"
+        ))
+        
+        # Sniper
+        self.items.append(Item(
+            "Sniper",
+            "weapon",
+            1,
+            5000,
+            damage=20,
+            description="Charge: 20-70 dmg, Map range, No movement"
+        ))
+    
+    def buy_item(self, currency):
+        item = self.items[self.selected_index]
+        if item.owned:
+            return currency, "Already owned"
+        
+        if currency >= item.price:
+            item.owned = True
+            if item.type == "armor":
+                # Unequip other armors
+                for i in self.items:
+                    if i.type == "armor" and i.equipped:
+                        i.equipped = False
+                item.equipped = True
+            elif item.type in ["sword", "weapon"]:
+                # Unequip other weapons
+                for i in self.items:
+                    if i.type in ["sword", "weapon"] and i.equipped:
+                        i.equipped = False
+                item.equipped = True
+            return currency - item.price, "Purchased!"
+        return currency, "Not enough currency"
+    
+    def equip_item(self):
+        item = self.items[self.selected_index]
+        if not item.owned:
+            return "Not owned"
+        
+        if item.type == "armor":
+            for i in self.items:
+                if i.type == "armor":
+                    i.equipped = False
+            item.equipped = True
+            return "Armor equipped"
+        elif item.type in ["sword", "weapon"]:
+            for i in self.items:
+                if i.type in ["sword", "weapon"]:
+                    i.equipped = False
+            item.equipped = True
+            return "Weapon equipped"
+        return ""
+    
+    def navigate(self, direction):
+        self.selected_index = max(0, min(len(self.items) - 1, self.selected_index + direction))
+        
+        # Adjust scroll
+        if self.selected_index < self.scroll_offset:
+            self.scroll_offset = self.selected_index
+        elif self.selected_index >= self.scroll_offset + self.max_visible:
+            self.scroll_offset = self.selected_index - self.max_visible + 1
+    
+    def get_equipped_stats(self):
+        hp_bonus = 200  # Base HP
+        damage = 2  # Base damage
+        weapon_type = "basic"
+        
+        for item in self.items:
+            if item.equipped:
+                if item.type == "armor":
+                    hp_bonus = item.hp_bonus
+                elif item.type == "sword":
+                    damage = item.damage
+                    weapon_type = "sword"
+                elif item.name == "Crossbow":
+                    weapon_type = "crossbow"
+                elif item.name == "Sniper":
+                    weapon_type = "sniper"
+        
+        return hp_bonus, damage, weapon_type
+
+class Menu:
+    def __init__(self):
+        self.font_large = pygame.font.Font(None, 72)
+        self.font_medium = pygame.font.Font(None, 48)
+        self.font_small = pygame.font.Font(None, 32)
+        self.font_tiny = pygame.font.Font(None, 24)
+        
+        self.main_options = ["Start Game", "Shop", "Settings", "Exit (F5)"]  # REMOVED "Load Game"
+        self.pause_options = ["Return to Menu (Run Lost)", "Quit Game (F5)"]  # CHANGED pause options
+        self.settings_options = ["Volume: 50%", "Speed: Normal", "Back"]
+        
+        self.selected = 0
+        self.volume = 50
+        self.game_speed = 1.0
+        
+        self.notification = ""
+        self.notification_timer = 0
+    
+    def navigate(self, direction, current_state):
+        if current_state == GameState.MAIN_MENU:
+            options = self.main_options
+        elif current_state == GameState.PAUSED:
+            options = self.pause_options
+        elif current_state == GameState.SETTINGS:
+            options = self.settings_options
+        else:
+            return
+        
+        self.selected = (self.selected + direction) % len(options)
+    
+    def show_notification(self, message):
+        self.notification = message
+        self.notification_timer = 180
+    
+    def update_notification(self):
+        if self.notification_timer > 0:
+            self.notification_timer -= 1
+    
+    def draw_main_menu(self, screen):
+        screen.fill(BLACK)
+        
+        title = self.font_large.render("HOLLOW KNIGHT BOSS FIGHT", True, PURPLE)
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
+        
+        y = 300
+        for i, option in enumerate(self.main_options):
+            color = YELLOW if i == self.selected else WHITE
+            text = self.font_medium.render(option, True, color)
+            screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y))
+            y += 70
+        
+        hint = self.font_tiny.render("Navigate: Arrow Keys | Select: Enter | F2: Admin Panel", True, GRAY)
+        screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2, SCREEN_HEIGHT - 50))
+        
+        if self.notification_timer > 0:
+            notif = self.font_small.render(self.notification, True, GREEN)
+            screen.blit(notif, (SCREEN_WIDTH // 2 - notif.get_width() // 2, 220))
+    
+    def draw_pause_menu(self, screen):
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.set_alpha(180)
+        overlay.fill(BLACK)
+        screen.blit(overlay, (0, 0))
+        
+        title = self.font_large.render("PAUSED", True, PURPLE)
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 150))
+        
+        warning = self.font_small.render("WARNING: Returning to menu will END this run!", True, RED)
+        screen.blit(warning, (SCREEN_WIDTH // 2 - warning.get_width() // 2, 250))
+        
+        y = 350
+        for i, option in enumerate(self.pause_options):
+            color = YELLOW if i == self.selected else WHITE
+            text = self.font_medium.render(option, True, color)
+            screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y))
+            y += 70
+    
+    def draw_settings(self, screen):
+        screen.fill(BLACK)
+        
+        title = self.font_large.render("SETTINGS", True, PURPLE)
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
+        
+        y = 300
+        for i, option in enumerate(self.settings_options):
+            color = YELLOW if i == self.selected else WHITE
+            text = self.font_medium.render(option, True, color)
+            screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y))
+            y += 70
+        
+        hint = self.font_tiny.render("Left/Right: Adjust | Enter: Select", True, GRAY)
+        screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2, SCREEN_HEIGHT - 50))
+    
+    def draw_shop(self, screen, shop, currency):
+        screen.fill(BLACK)
+        
+        title = self.font_large.render("SHOP", True, PURPLE)
+        screen.blit(title, (50, 30))
+        
+        currency_text = self.font_medium.render(f"Currency: {currency}", True, YELLOW)
+        screen.blit(currency_text, (SCREEN_WIDTH - currency_text.get_width() - 50, 40))
+        
+        # Items list
+        y = 150
+        visible_items = shop.items[shop.scroll_offset:shop.scroll_offset + shop.max_visible]
+        
+        for i, item in enumerate(visible_items):
+            actual_index = shop.scroll_offset + i
+            is_selected = actual_index == shop.selected_index
+            
+            # Background
+            bg_color = DARK_PURPLE if is_selected else DARK_GRAY
+            pygame.draw.rect(screen, bg_color, (50, y, SCREEN_WIDTH - 100, 80))
+            pygame.draw.rect(screen, PURPLE if is_selected else GRAY, (50, y, SCREEN_WIDTH - 100, 80), 2)
+            
+            # Item info
+            name_text = self.font_medium.render(item.name, True, WHITE)
+            screen.blit(name_text, (70, y + 10))
+            
+            desc_text = self.font_small.render(item.description, True, GRAY)
+            screen.blit(desc_text, (70, y + 45))
+            
+            # Price
+            price_color = GREEN if currency >= item.price or item.owned else RED
+            price_text = self.font_small.render(f"${item.price}", True, price_color)
+            screen.blit(price_text, (SCREEN_WIDTH - 250, y + 15))
+            
+            # Status
+            if item.equipped:
+                status = self.font_small.render("EQUIPPED", True, YELLOW)
+                screen.blit(status, (SCREEN_WIDTH - 250, y + 45))
+            elif item.owned:
+                status = self.font_small.render("OWNED", True, GREEN)
+                screen.blit(status, (SCREEN_WIDTH - 250, y + 45))
+            
+            y += 90
+        
+        # Controls
+        controls = self.font_tiny.render("Up/Down: Navigate | B: Buy | E: Equip | ESC: Back", True, GRAY)
+        screen.blit(controls, (SCREEN_WIDTH // 2 - controls.get_width() // 2, SCREEN_HEIGHT - 50))
+        
+        # Notification
+        if self.notification_timer > 0:
+            notif = self.font_small.render(self.notification, True, GREEN)
+            screen.blit(notif, (SCREEN_WIDTH // 2 - notif.get_width() // 2, 100))
 
 class Player:
-    def __init__(self):
+    def __init__(self, max_hp=200, base_damage=2, weapon_type="basic"):
         self.width, self.height = 40, 60
         self.x, self.y = 400, 800
         self.vel_x, self.vel_y = 0, 0
-        self.max_hp, self.hp = 200, 200
+        self.max_hp, self.hp = max_hp, max_hp
+        self.base_damage = base_damage
+        self.weapon_type = weapon_type
         self.speed, self.jump_power, self.gravity = 6, 15, 0.6
         self.jumps_left = 2
         self.on_ground = False
@@ -51,11 +450,17 @@ class Player:
         self.charge_rate = 25 / 60
         self.aim_angle = 0
         
+        # Weapon-specific
+        if weapon_type == "crossbow":
+            self.charge_rate = 12.5 / 60  # 200% slower
+        elif weapon_type == "sniper":
+            self.aiming_sniper = False
+        
         self.parrying = False
         self.fire_slow = False
         self.burn_damage_timer = 0
-        
-    def update(self, platforms, walls, temp_walls, fire_zones, mouse_pos, camera_x, camera_y):
+    
+    def update(self, platforms, walls, temp_walls, fire_zones, mouse_pos, camera_x, camera_y, game_instance=None):
         keys = pygame.key.get_pressed()
         
         if self.dash_cooldown > 0:
@@ -83,9 +488,12 @@ class Player:
             self.vel_x = 0
             speed = self.speed
             
-            if self.fire_slow:
+            # Sniper cannot move while aiming
+            if self.weapon_type == "sniper" and self.charging:
+                speed = 0
+            elif self.fire_slow:
                 speed *= 0.5
-            if self.charging:
+            elif self.charging:
                 speed *= 0.25 if self.charge_percent >= self.max_charge else 0.5
             
             if keys[pygame.K_q]:
@@ -101,7 +509,25 @@ class Player:
         self.x += self.vel_x
         self.check_collision(platforms, walls, temp_walls, 'x')
         self.y += self.vel_y
-        self.check_collision(platforms, walls, temp_walls, 'y')
+        
+        # Only check collision with platforms if they're visible
+        if game_instance is not None and hasattr(game_instance, 'platforms_visible'):
+            if game_instance.platforms_visible:
+                self.check_collision(platforms, walls, temp_walls, 'y')
+            else:
+                # No platform collision when invisible - only gravity
+                self.on_ground = False
+                self.on_wall = False
+                # Still check wall collisions
+                for wall in walls + [w['rect'] for w in temp_walls]:
+                    player_rect = pygame.Rect(self.x, self.y, self.width, self.height)
+                    if player_rect.colliderect(wall) and self.vel_y > 0:
+                        self.y = wall.top - self.height
+                        self.vel_y = 0
+                        self.on_ground = True
+                        self.jumps_left = 2
+        else:
+            self.check_collision(platforms, walls, temp_walls, 'y')
         
         self.x = max(0, min(self.x, MAP_WIDTH - self.width))
         self.y = max(0, min(self.y, MAP_HEIGHT - self.height))
@@ -148,8 +574,14 @@ class Player:
                 if player_rect.colliderect(platform):
                     if self.vel_x > 0:
                         self.x = platform.left - self.width
+                        # Check if it's a vertical platform (narrow width)
+                        if platform.width <= 30:
+                            self.on_wall, self.wall_side, self.jumps_left = True, 1, 1
                     elif self.vel_x < 0:
                         self.x = platform.right
+                        # Check if it's a vertical platform (narrow width)
+                        if platform.width <= 30:
+                            self.on_wall, self.wall_side, self.jumps_left = True, -1, 1
                     self.vel_x = 0
             for wall in all_walls:
                 if player_rect.colliderect(wall):
@@ -199,8 +631,18 @@ class Player:
         self.charging = False
         charge = self.charge_percent
         self.charge_percent = 0
-        damage = 2 + (charge - 25) * 14 / 175
-        damage = max(2, min(16, damage))
+        
+        # Calculate damage based on weapon
+        if self.weapon_type == "crossbow":
+            min_dmg, max_dmg = 5, 25
+        elif self.weapon_type == "sniper":
+            min_dmg, max_dmg = 20, 70
+        else:
+            min_dmg, max_dmg = 2, 16
+        
+        damage = min_dmg + (charge - 25) * (max_dmg - min_dmg) / 175
+        damage = max(min_dmg, min(max_dmg, damage))
+        
         return {'damage': damage, 'angle': self.aim_angle, 'charge': charge}
     
     def get_charge_color(self):
@@ -220,14 +662,26 @@ class Player:
         
         if self.charging:
             center_x, center_y = x + self.width // 2, y + self.height // 2
-            beam_length = 300
-            end_x = center_x + math.cos(self.aim_angle) * beam_length
-            end_y = center_y + math.sin(self.aim_angle) * beam_length
-            beam_color = self.get_charge_color()
-            thickness = 3 + int(self.charge_percent / 50)
-            pygame.draw.line(screen, beam_color, (center_x, center_y), (end_x, end_y), thickness)
-            charge_radius = 10 + int(self.charge_percent / 20)
-            pygame.draw.circle(screen, beam_color, (int(end_x), int(end_y)), charge_radius, 2)
+            
+            if self.weapon_type == "sniper":
+                # Draw circular POV cursor at mouse position
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                pygame.draw.circle(screen, RED, (mouse_x, mouse_y), 30, 2)
+                pygame.draw.circle(screen, RED, (mouse_x, mouse_y), 5)
+                pygame.draw.line(screen, RED, (mouse_x - 35, mouse_y), (mouse_x - 25, mouse_y), 2)
+                pygame.draw.line(screen, RED, (mouse_x + 35, mouse_y), (mouse_x + 25, mouse_y), 2)
+                pygame.draw.line(screen, RED, (mouse_x, mouse_y - 35), (mouse_x, mouse_y - 25), 2)
+                pygame.draw.line(screen, RED, (mouse_x, mouse_y + 35), (mouse_x, mouse_y + 25), 2)
+            else:
+                # Regular beam
+                beam_length = 600 if self.weapon_type == "crossbow" else 300
+                end_x = center_x + math.cos(self.aim_angle) * beam_length
+                end_y = center_y + math.sin(self.aim_angle) * beam_length
+                beam_color = self.get_charge_color()
+                thickness = 3 + int(self.charge_percent / 50)
+                pygame.draw.line(screen, beam_color, (center_x, center_y), (end_x, end_y), thickness)
+                charge_radius = 10 + int(self.charge_percent / 20)
+                pygame.draw.circle(screen, beam_color, (int(end_x), int(end_y)), charge_radius, 2)
         
         bar_width, bar_height = 60, 8
         pygame.draw.rect(screen, RED, (x - 10, y - 20, bar_width, bar_height))
@@ -294,8 +748,8 @@ class Boss:
         self.move_timer -= 1
         self.x = max(100, min(self.x, MAP_WIDTH - 100))
     
-    def take_damage(self):
-        self.hp -= 1
+    def take_damage(self, damage):
+        self.hp -= damage
         self.hits_taken += 1
         self.flash_timer = 5
     
@@ -381,10 +835,10 @@ class HealingOrb:
 class Game:
     def __init__(self):
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        pygame.display.set_caption("Hollow Knight Boss Fight")
+        pygame.display.set_caption("Hollow Knight Boss Fight - Enhanced")
         self.clock = pygame.time.Clock()
         self.running = True
-        self.state = GameState.START_MENU
+        self.state = GameState.MAIN_MENU
         
         self.player = None
         self.boss = None
@@ -403,27 +857,41 @@ class Game:
         
         self.camera_x, self.camera_y = 0, 0
         
-        self.font_large = pygame.font.Font(None, 72)
-        self.font_medium = pygame.font.Font(None, 36)
-        self.font_small = pygame.font.Font(None, 24)
+        # Menu system
+        self.menu = Menu()
+        self.shop = Shop()
+        self.save_manager = SaveManager()
         
-        # Admin panel
+        # Meta progression data (persists between runs)
+        self.currency = 0  # Loaded from meta save
+        self.total_damage_dealt = 0  # Runtime only - NOT saved
+        
+        # Load meta progression on startup
+        self.load_meta_progression()
+        
+        # Platform hazard system
+        self.platform_disappear_timer = 0
+        self.platforms_visible = True
+        self.platform_hazard_active = False
+        
+        # Admin panel (from original)
         self.admin_panel_active = False
         self.admin_input = ""
         self.admin_history = []
-        self.admin_scroll = 0
         self.godmode = False
         self.boss_invincible = False
         self.paused = False
+        self.total_damage_dealt = 0
+        self.platform_disappear_timer = 0
+        self.platforms_visible = True
+        self.platform_hazard_active = False
         self.camera_follow = True
         self.debug_mode = False
-        
-        # Admin authentication
         self.admin_authenticated = False
         self.admin_login_mode = False
         self.admin_username = ""
         self.admin_password = ""
-        self.admin_input_field = "username"  # "username" or "password"
+        self.admin_input_field = "username"
         self.admin_login_attempts = 0
     
     def setup_arena(self):
@@ -439,9 +907,71 @@ class Game:
         for i in range(3):
             self.platforms.append(pygame.Rect(500 + i * 500, MAP_HEIGHT - 1000, 200, 20))
     
+    def rotate_platforms_phase2(self):
+        """Rotate platforms to vertical orientation for Phase 2"""
+        rotated_platforms = []
+        
+        # Keep ground platform
+        rotated_platforms.append(self.platforms[0])
+        
+        # Rotate other platforms to vertical (swap width/height)
+        for platform in self.platforms[1:]:
+            # Convert horizontal platform to vertical
+            new_x = platform.x + platform.width // 2 - 10  # Center and make narrow
+            new_y = platform.y - 100  # Extend upward
+            new_width = 20  # Narrow vertical platform
+            new_height = platform.width  # Original width becomes height
+            
+            rotated_platforms.append(pygame.Rect(new_x, new_y, new_width, new_height))
+        
+        self.platforms = rotated_platforms
+    
+    def load_meta_progression(self):
+        """Load ONLY meta progression - never runtime state"""
+        meta_data = self.save_manager.load_meta_progression(self.shop.items)
+        if meta_data:
+            self.currency = meta_data['total_credits']
+            self.menu.show_notification(f"Meta progression loaded! Credits: {self.currency}")
+        else:
+            # No save exists - start fresh
+            self.currency = 0
+    
+    def save_meta_progression(self):
+        """Save ONLY meta progression - never runtime state"""
+        if self.save_manager.save_meta_progression(self.currency, self.shop.items):
+            self.menu.show_notification("Progress saved!")
+            return True
+        else:
+            self.menu.show_notification("Save failed!")
+            return False
+    
+    def return_to_menu_run_lost(self):
+        """Return to menu - destroys current run permanently"""
+        # Save meta progression before destroying run
+        self.save_meta_progression()
+        
+        # Destroy ALL runtime data
+        self.player = None
+        self.boss = None
+        self.projectiles = []
+        self.minions = []
+        self.fire_zones = []
+        self.lasers = []
+        self.temp_walls = []
+        self.healing_orbs = []
+        self.total_damage_dealt = 0
+        
+        # Return to menu
+        self.state = GameState.MAIN_MENU
+        self.menu.selected = 0
+    
     def start_game(self):
         self.state = GameState.PLAYING
-        self.player = Player()
+        
+        # Get equipped stats from shop
+        max_hp, base_damage, weapon_type = self.shop.get_equipped_stats()
+        
+        self.player = Player(max_hp, base_damage, weapon_type)
         self.boss = Boss()
         self.projectiles = []
         self.minions = []
@@ -454,6 +984,40 @@ class Game:
         self.godmode = False
         self.boss_invincible = False
         self.paused = False
+    
+    def load_game(self):
+        save_data = self.save_manager.load_game(self.shop.items)
+        if save_data:
+            self.currency = save_data['currency']
+            self.game_progress = save_data['game_progress']
+            
+            # Get equipped stats
+            max_hp, base_damage, weapon_type = self.shop.get_equipped_stats()
+            
+            self.player = Player(max_hp, base_damage, weapon_type)
+            self.player.x = save_data['player']['x']
+            self.player.y = save_data['player']['y']
+            self.player.hp = save_data['player']['hp']
+            
+            self.boss = Boss()
+            self.projectiles = []
+            self.minions = []
+            self.fire_zones = []
+            self.lasers = []
+            self.temp_walls = []
+            self.healing_orbs = []
+            
+            self.state = GameState.PLAYING
+            self.menu.show_notification("Game loaded!")
+        else:
+            self.menu.show_notification("No save file found!")
+    
+    def save_game(self):
+        if self.player and self.boss:
+            if self.save_manager.save_game(self.player, self.currency, self.game_progress, self.shop.items):
+                self.menu.show_notification("Game saved!")
+            else:
+                self.menu.show_notification("Save failed!")
     
     def check_admin_login(self):
         correct_username = "admin"
@@ -476,7 +1040,7 @@ class Game:
             self.admin_input_field = "username"
             
             if self.admin_login_attempts >= 3:
-                self.admin_history.append("TOO MANY FAILED ATTEMPTS - Panel locked for 10 seconds")
+                self.admin_history.append("TOO MANY FAILED ATTEMPTS")
                 self.admin_login_mode = False
                 self.admin_login_attempts = 0
     
@@ -518,7 +1082,8 @@ class Game:
                 self.admin_history.append("Player healed to full")
             
             elif parts[0] == "reset_player":
-                self.player = Player()
+                max_hp, base_damage, weapon_type = self.shop.get_equipped_stats()
+                self.player = Player(max_hp, base_damage, weapon_type)
                 self.admin_history.append("Player reset")
             
             elif parts[0] == "parry" and self.player:
@@ -540,7 +1105,7 @@ class Game:
                     self.admin_history.append(f"Charged attack released ({attack_data['damage']} dmg)")
             
             # Boss commands
-            elif parts[0] == "kill" and parts[1] == "boss" and self.boss:
+            elif parts[0] == "kill" and len(parts) >= 2 and parts[1] == "boss" and self.boss:
                 self.boss.hp = 0
                 self.admin_history.append("Boss killed")
             
@@ -551,12 +1116,30 @@ class Game:
             elif parts[0] == "boss" and len(parts) >= 2:
                 if parts[1] == "phase1" and self.boss:
                     self.boss.phase = 1
+                    self.boss.fireball_cooldown_max = self.boss.fireball_cooldown_max_base
+                    self.boss.laser_cooldown_max = self.boss.laser_cooldown_max_base
+                    self.boss.shockwave_cooldown_max = self.boss.shockwave_cooldown_max_base
+                    self.boss.minion_cooldown_max = self.boss.minion_cooldown_max_base
+                    self.platform_hazard_active = False
+                    self.platforms_visible = True
+                    self.setup_arena()  # Reset platforms to horizontal
                     self.admin_history.append("Boss forced to Phase 1")
                 elif parts[1] == "phase2" and self.boss:
-                    self.boss.enter_phase_2()
-                    self.admin_history.append("Boss forced to Phase 2")
+                    if self.boss.phase != 2:
+                        self.boss.phase = 2
+                        self.boss.fireball_cooldown_max = self.boss.fireball_cooldown_max_base // 3
+                        self.boss.laser_cooldown_max = self.boss.laser_cooldown_max_base // 3
+                        self.boss.shockwave_cooldown_max = self.boss.shockwave_cooldown_max_base // 3
+                        self.boss.minion_cooldown_max = self.boss.minion_cooldown_max_base // 3
+                        self.rotate_platforms_phase2()
+                        self.platform_hazard_active = True
+                        self.platform_disappear_timer = 1200
+                        self.admin_history.append("Boss forced to Phase 2")
                 elif parts[1] == "reset":
                     self.boss = Boss()
+                    self.platform_hazard_active = False
+                    self.platforms_visible = True
+                    self.setup_arena()
                     self.admin_history.append("Boss reset")
                 elif parts[1] == "teleport" and len(parts) >= 4:
                     self.boss.x = float(parts[2])
@@ -587,7 +1170,7 @@ class Game:
                         spawn_x = self.boss.x + random.randint(-100, 100)
                         self.minions.append(Minion(spawn_x, self.boss.y + 200))
                     self.admin_history.append(f"Spawned {count} minions")
-                elif parts[1] == "cooldowns" and parts[2] == "reset" and self.boss:
+                elif parts[1] == "cooldowns" and len(parts) >= 3 and parts[2] == "reset" and self.boss:
                     self.boss.fireball_cooldown = 0
                     self.boss.laser_cooldown = 0
                     self.boss.shockwave_cooldown = 0
@@ -597,8 +1180,22 @@ class Game:
                     phase = int(parts[2])
                     if phase == 1:
                         self.boss.phase = 1
+                        self.boss.fireball_cooldown_max = self.boss.fireball_cooldown_max_base
+                        self.boss.laser_cooldown_max = self.boss.laser_cooldown_max_base
+                        self.boss.shockwave_cooldown_max = self.boss.shockwave_cooldown_max_base
+                        self.boss.minion_cooldown_max = self.boss.minion_cooldown_max_base
+                        self.platform_hazard_active = False
+                        self.platforms_visible = True
+                        self.setup_arena()
                     elif phase == 2:
-                        self.boss.enter_phase_2()
+                        self.boss.phase = 2
+                        self.boss.fireball_cooldown_max = self.boss.fireball_cooldown_max_base // 3
+                        self.boss.laser_cooldown_max = self.boss.laser_cooldown_max_base // 3
+                        self.boss.shockwave_cooldown_max = self.boss.shockwave_cooldown_max_base // 3
+                        self.boss.minion_cooldown_max = self.boss.minion_cooldown_max_base // 3
+                        self.rotate_platforms_phase2()
+                        self.platform_hazard_active = True
+                        self.platform_disappear_timer = 1200
                     self.admin_history.append(f"Boss phase set to {phase}")
             
             # Spawn commands
@@ -670,7 +1267,7 @@ class Game:
                     self.camera_x = float(parts[1])
                     self.camera_y = float(parts[2])
                     self.admin_history.append(f"Camera set to ({parts[1]}, {parts[2]})")
-                elif parts[1] == "follow":
+                elif len(parts) >= 2 and parts[1] == "follow":
                     self.camera_follow = parts[2] == "on" if len(parts) > 2 else not self.camera_follow
                     self.admin_history.append(f"Camera follow: {'ON' if self.camera_follow else 'OFF'}")
             
@@ -679,36 +1276,101 @@ class Game:
                 self.debug_mode = parts[1] == "on" if len(parts) > 1 else not self.debug_mode
                 self.admin_history.append(f"Debug mode: {'ON' if self.debug_mode else 'OFF'}")
             
+            # Currency commands
+            elif parts[0] == "currency" and len(parts) >= 2:
+                self.currency = int(parts[1])
+                self.admin_history.append(f"Currency set to {parts[1]}")
+            
+            elif parts[0] == "give" and len(parts) >= 2:
+                amount = int(parts[1])
+                self.currency += amount
+                self.save_meta_progression()  # Auto-save after admin currency grant
+                self.admin_history.append(f"Gave {amount} currency (Total: {self.currency})")
+            
+            # Save/Load
+            elif parts[0] == "save":
+                self.save_meta_progression()
+                self.admin_history.append("Meta progression saved via admin")
+            
+            elif parts[0] == "reset_save":
+                if self.save_manager.delete_save():
+                    self.currency = 0
+                    for item in self.shop.items:
+                        item.owned = False
+                        item.equipped = False
+                    self.admin_history.append("Save file deleted - meta progression reset")
+                else:
+                    self.admin_history.append("Failed to delete save")
+            
+            elif parts[0] == "reset":
+                # Full reset: delete save, reset currency, reset items, reset current run
+                if self.save_manager.delete_save():
+                    self.currency = 0
+                    for item in self.shop.items:
+                        item.owned = False
+                        item.equipped = False
+                    # Reset current run if in game
+                    if self.player and self.boss:
+                        self.start_game()
+                    self.admin_history.append("FULL RESET - Save deleted, currency cleared, run restarted")
+                else:
+                    self.admin_history.append("Failed to delete save file")
+            
+            elif parts[0] == "unlock_all":
+                for item in self.shop.items:
+                    item.owned = True
+                self.save_meta_progression()  # Auto-save after unlock
+                self.admin_history.append("All items unlocked and saved")
+            
+            elif parts[0] == "boss_phase2" and self.boss:
+                if self.boss.phase != 2:
+                    self.boss.phase = 2
+                    self.boss.fireball_cooldown_max = self.boss.fireball_cooldown_max_base // 3
+                    self.boss.laser_cooldown_max = self.boss.laser_cooldown_max_base // 3
+                    self.boss.shockwave_cooldown_max = self.boss.shockwave_cooldown_max_base // 3
+                    self.boss.minion_cooldown_max = self.boss.minion_cooldown_max_base // 3
+                    self.rotate_platforms_phase2()
+                    self.platform_hazard_active = True
+                    self.platform_disappear_timer = 1200
+                    self.admin_history.append("Boss Phase 2 activated!")
+                else:
+                    self.admin_history.append("Boss already in Phase 2")
+            
             # Help command
             elif parts[0] == "help":
                 self.admin_history.append("=== ADMIN COMMANDS ===")
-                self.admin_history.append("godmode on/off, set hp/max_hp/speed/jump/dash <val>")
-                self.admin_history.append("tp <x> <y>, heal, reset_player, parry on/off")
-                self.admin_history.append("kill boss, boss_hp <val>, boss phase1/phase2/reset")
-                self.admin_history.append("boss teleport <x> <y>, boss invincible on/off")
+                self.admin_history.append("PLAYER: godmode, set hp/max_hp/speed/jump/dash")
+                self.admin_history.append("tp <x> <y>, heal, reset_player, parry, charge")
+                self.admin_history.append("BOSS: kill boss, boss_hp, boss phase1/phase2")
+                self.admin_history.append("boss reset, boss teleport, boss invincible")
                 self.admin_history.append("boss fireball/laser/shockwave/summon_minions")
-                self.admin_history.append("spawn lava/fireball/orb/minion <x> <y>")
-                self.admin_history.append("clear projectiles/minions/fire/orbs")
-                self.admin_history.append("win, lose, restart, pause on/off")
-                self.admin_history.append("camera <x> <y>, camera follow on/off, debug on/off")
-                self.admin_history.append("logout - Log out of admin panel")
+                self.admin_history.append("SPAWN: spawn lava/fireball/minion/orb/temp_wall")
+                self.admin_history.append("CLEAR: clear projectiles/minions/fire/orbs")
+                self.admin_history.append("GAME: win, lose, restart, pause")
+                self.admin_history.append("CAMERA: camera <x> <y>, camera follow")
+                self.admin_history.append("OTHER: currency, give, save, unlock_all")
+                self.admin_history.append("reset - FULL RESET (save + currency + items + run)")
+                self.admin_history.append("reset_save - Delete save file only, debug")
+                self.admin_history.append("Type 'logout' to exit admin panel")
             
             elif parts[0] == "logout":
                 self.admin_authenticated = False
                 self.admin_panel_active = False
-                self.admin_history.append("Logged out successfully")
+                self.admin_history.append("Logged out")
             
             else:
-                self.admin_history.append(f"Unknown command: {cmd}")
+                self.admin_history.append(f"Unknown: {cmd}")
         
         except Exception as e:
             self.admin_history.append(f"Error: {str(e)}")
         
-        # Keep history limited
         if len(self.admin_history) > 20:
             self.admin_history = self.admin_history[-20:]
     
     def boss_ai(self):
+        if not self.boss or not self.player:
+            return
+            
         multiplier = 3 if self.boss.phase == 2 else 1
         
         if self.boss.fireball_cooldown == 0:
@@ -751,14 +1413,15 @@ class Game:
             self.boss.minion_cooldown = self.boss.minion_cooldown_max
     
     def update(self):
-        if self.paused:
+        self.menu.update_notification()
+        
+        if self.paused or self.state != GameState.PLAYING:
             return
             
         if self.state == GameState.PLAYING and self.player and self.boss:
             mouse_pos = pygame.mouse.get_pos()
-            self.player.update(self.platforms, self.walls, self.temp_walls, self.fire_zones, mouse_pos, self.camera_x, self.camera_y)
+            self.player.update(self.platforms, self.walls, self.temp_walls, self.fire_zones, mouse_pos, self.camera_x, self.camera_y, self)
             
-            # Godmode
             if self.godmode and self.player.hp < self.player.max_hp:
                 self.player.hp = self.player.max_hp
             
@@ -773,8 +1436,16 @@ class Game:
                     boss_rect = pygame.Rect(self.boss.x, self.boss.y, self.boss.width, self.boss.height)
                     if proj_rect.colliderect(boss_rect):
                         if not self.boss_invincible:
-                            for _ in range(int(proj.damage)):
-                                self.boss.take_damage()
+                            damage = int(proj.damage)
+                            self.boss.take_damage(damage)
+                            self.total_damage_dealt += damage
+                            
+                            # Award currency: 2 credits per 10 damage
+                            credits_earned = (self.total_damage_dealt // 10) * 2
+                            previous_credits = ((self.total_damage_dealt - damage) // 10) * 2
+                            new_credits = credits_earned - previous_credits
+                            if new_credits > 0:
+                                self.currency += new_credits
                         self.projectiles.remove(proj)
                         continue
                     if proj.x < 0 or proj.x > MAP_WIDTH or proj.y < 0 or proj.y > MAP_HEIGHT:
@@ -853,6 +1524,21 @@ class Game:
                     self.lasers.append(laser_data['laser'])
                     self.laser_spawn_queue.remove(laser_data)
             
+            # Boss Phase 2 platform hazard
+            if self.platform_hazard_active and self.boss and self.boss.phase == 2:
+                self.platform_disappear_timer -= 1
+                
+                if self.platform_disappear_timer <= 0:
+                    # Toggle platform visibility
+                    self.platforms_visible = not self.platforms_visible
+                    
+                    if self.platforms_visible:
+                        # Platforms reappear - wait 20 seconds (1200 frames)
+                        self.platform_disappear_timer = 1200
+                    else:
+                        # Platforms disappear - wait 5 seconds (300 frames)
+                        self.platform_disappear_timer = 300
+            
             target_x = self.player.x - SCREEN_WIDTH // 2
             target_y = self.player.y - SCREEN_HEIGHT // 2
             if self.camera_follow:
@@ -863,40 +1549,60 @@ class Game:
             
             if self.player.hp <= 0:
                 self.state = GameState.GAME_OVER
+                # Auto-save meta progression on game over
+                self.save_meta_progression()
             elif self.boss.hp <= 0:
                 self.state = GameState.VICTORY
+                self.currency += 1000  # Victory reward
+                # Auto-save meta progression on victory
+                self.save_meta_progression()
     
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
+                # F5 - Instant quit
+                if event.key == pygame.K_F5:
                     self.running = False
+                    return
                 
-                # Toggle admin panel with F2
+                # ESC - Context-dependent
+                if event.key == pygame.K_ESCAPE:
+                    if self.state == GameState.PLAYING:
+                        self.state = GameState.PAUSED
+                        self.menu.selected = 0
+                    elif self.state == GameState.PAUSED:
+                        self.state = GameState.PLAYING
+                    elif self.state == GameState.SHOP:
+                        self.state = GameState.MAIN_MENU
+                        self.menu.selected = 0
+                    elif self.state == GameState.SETTINGS:
+                        self.state = GameState.MAIN_MENU
+                        self.menu.selected = 0
+                    elif self.admin_login_mode:
+                        self.admin_login_mode = False
+                    elif self.admin_panel_active:
+                        self.admin_panel_active = False
+                    return
+                
+                # F2 - Admin panel
                 if event.key == pygame.K_F2:
                     if not self.admin_authenticated and not self.admin_login_mode:
-                        # Open login screen
                         self.admin_login_mode = True
                         self.admin_username = ""
                         self.admin_password = ""
                         self.admin_input_field = "username"
                         self.admin_history.append("=== ADMIN LOGIN ===")
-                        self.admin_history.append("Enter username...")
                     elif self.admin_authenticated:
-                        # Toggle admin panel if already logged in
                         self.admin_panel_active = not self.admin_panel_active
-                        if self.admin_panel_active:
-                            self.admin_history.append("=== ADMIN PANEL OPENED ===")
                     return
                 
-                # Admin login input
+                # Admin login
                 if self.admin_login_mode:
                     if event.key == pygame.K_RETURN:
                         if self.admin_input_field == "username":
                             self.admin_input_field = "password"
-                            self.admin_history.append("Enter password...")
                         elif self.admin_input_field == "password":
                             self.check_admin_login()
                     elif event.key == pygame.K_BACKSPACE:
@@ -904,10 +1610,6 @@ class Game:
                             self.admin_username = self.admin_username[:-1]
                         else:
                             self.admin_password = self.admin_password[:-1]
-                    elif event.key == pygame.K_ESCAPE:
-                        self.admin_login_mode = False
-                        self.admin_username = ""
-                        self.admin_password = ""
                     elif event.unicode:
                         if self.admin_input_field == "username" and len(self.admin_username) < 20:
                             self.admin_username += event.unicode
@@ -915,7 +1617,7 @@ class Game:
                             self.admin_password += event.unicode
                     return
                 
-                # Admin panel input (only if authenticated)
+                # Admin panel commands
                 if self.admin_panel_active and self.admin_authenticated:
                     if event.key == pygame.K_RETURN:
                         if self.admin_input.strip():
@@ -923,16 +1625,91 @@ class Game:
                             self.admin_input = ""
                     elif event.key == pygame.K_BACKSPACE:
                         self.admin_input = self.admin_input[:-1]
-                    elif event.key == pygame.K_ESCAPE:
-                        self.admin_panel_active = False
                     elif event.unicode and len(self.admin_input) < 50:
                         self.admin_input += event.unicode
                     return
                 
-                if self.state == GameState.START_MENU and event.key == pygame.K_RETURN:
-                    self.start_game()
-                elif self.state in [GameState.GAME_OVER, GameState.VICTORY] and event.key == pygame.K_RETURN:
-                    self.start_game()
+                # Main Menu
+                if self.state == GameState.MAIN_MENU:
+                    if event.key in [pygame.K_UP, pygame.K_DOWN]:
+                        direction = -1 if event.key == pygame.K_UP else 1
+                        self.menu.navigate(direction, self.state)
+                    elif event.key == pygame.K_RETURN:
+                        option = self.menu.main_options[self.menu.selected]
+                        if option == "Start Game":
+                            self.start_game()
+                        elif option == "Shop":
+                            self.state = GameState.SHOP
+                            self.shop.selected_index = 0
+                        elif option == "Settings":
+                            self.state = GameState.SETTINGS
+                            self.menu.selected = 0
+                        elif option == "Exit (F5)":
+                            self.running = False
+                
+                # Pause Menu
+                elif self.state == GameState.PAUSED:
+                    if event.key in [pygame.K_UP, pygame.K_DOWN]:
+                        direction = -1 if event.key == pygame.K_UP else 1
+                        self.menu.navigate(direction, self.state)
+                    elif event.key == pygame.K_RETURN:
+                        option = self.menu.pause_options[self.menu.selected]
+                        if option == "Return to Menu (Run Lost)":
+                            self.return_to_menu_run_lost()
+                        elif option == "Quit Game (F5)":
+                            self.running = False
+                
+                # Shop
+                elif self.state == GameState.SHOP:
+                    if event.key == pygame.K_UP:
+                        self.shop.navigate(-1)
+                    elif event.key == pygame.K_DOWN:
+                        self.shop.navigate(1)
+                    elif event.key == pygame.K_b:
+                        self.currency, msg = self.shop.buy_item(self.currency)
+                        self.menu.show_notification(msg)
+                        # Auto-save after purchase
+                        self.save_meta_progression()
+                    elif event.key == pygame.K_e:
+                        msg = self.shop.equip_item()
+                        if msg:
+                            self.menu.show_notification(msg)
+                            # Auto-save after equip change
+                            self.save_meta_progression()
+                
+                # Settings
+                elif self.state == GameState.SETTINGS:
+                    if event.key in [pygame.K_UP, pygame.K_DOWN]:
+                        direction = -1 if event.key == pygame.K_UP else 1
+                        self.menu.navigate(direction, self.state)
+                    elif event.key in [pygame.K_LEFT, pygame.K_RIGHT]:
+                        if self.menu.selected == 0:  # Volume
+                            self.menu.volume = max(0, min(100, self.menu.volume + (10 if event.key == pygame.K_RIGHT else -10)))
+                            self.menu.settings_options[0] = f"Volume: {self.menu.volume}%"
+                        elif self.menu.selected == 1:  # Speed
+                            speeds = [0.5, 1.0, 1.5, 2.0]
+                            names = ["Slow", "Normal", "Fast", "Very Fast"]
+                            idx = speeds.index(self.menu.game_speed)
+                            if event.key == pygame.K_RIGHT:
+                                idx = min(len(speeds) - 1, idx + 1)
+                            else:
+                                idx = max(0, idx - 1)
+                            self.menu.game_speed = speeds[idx]
+                            self.menu.settings_options[1] = f"Speed: {names[idx]}"
+                    elif event.key == pygame.K_RETURN:
+                        if self.menu.selected == 2:  # Back
+                            self.state = GameState.MAIN_MENU
+                            self.menu.selected = 0
+                
+                # Game Over / Victory
+                elif self.state in [GameState.GAME_OVER, GameState.VICTORY]:
+                    if event.key == pygame.K_RETURN:
+                        # Save meta progression before returning to menu
+                        self.save_meta_progression()
+                        self.state = GameState.MAIN_MENU
+                        self.menu.selected = 0
+                
+                # Gameplay controls
                 elif self.state == GameState.PLAYING:
                     if event.key == pygame.K_SPACE:
                         self.player.jump()
@@ -940,20 +1717,32 @@ class Game:
                         self.player.dash()
                     elif event.key == pygame.K_f:
                         self.player.parrying = True
+            
             if event.type == pygame.KEYUP:
-                if event.key == pygame.K_f and self.state == GameState.PLAYING:
+                if event.key == pygame.K_f and self.state == GameState.PLAYING and self.player:
                     self.player.parrying = False
-            if event.type == pygame.MOUSEBUTTONDOWN and self.state == GameState.PLAYING:
-                if event.button == 1:
+            
+            if event.type == pygame.MOUSEBUTTONDOWN and self.state == GameState.PLAYING and self.player and self.boss:
+                if event.button == 1:  # Left click - Basic attack
                     if self.player.basic_attack():
                         player_rect = pygame.Rect(self.player.x - 30, self.player.y - 30, self.player.width + 60, self.player.height + 60)
                         boss_rect = pygame.Rect(self.boss.x, self.boss.y, self.boss.width, self.boss.height)
                         if player_rect.colliderect(boss_rect) and not self.boss_invincible:
-                            self.boss.take_damage()
-                elif event.button == 3:
+                            damage = self.player.base_damage
+                            self.boss.take_damage(damage)
+                            self.total_damage_dealt += damage
+                            
+                            # Award currency: 2 credits per 10 damage
+                            credits_earned = (self.total_damage_dealt // 10) * 2
+                            previous_credits = ((self.total_damage_dealt - damage) // 10) * 2
+                            new_credits = credits_earned - previous_credits
+                            if new_credits > 0:
+                                self.currency += new_credits
+                elif event.button == 3:  # Right click - Start charging
                     self.player.start_charging()
-            if event.type == pygame.MOUSEBUTTONUP and self.state == GameState.PLAYING:
-                if event.button == 3:
+            
+            if event.type == pygame.MOUSEBUTTONUP and self.state == GameState.PLAYING and self.player:
+                if event.button == 3:  # Right click release - Charged attack
                     attack_data = self.player.release_charged_attack()
                     if attack_data and attack_data['charge'] >= 25:
                         speed = 15
@@ -966,22 +1755,27 @@ class Game:
     def draw(self):
         self.screen.fill(BLACK)
         
-        if self.state == GameState.START_MENU:
-            title = self.font_large.render("HOLLOW KNIGHT BOSS FIGHT", True, PURPLE)
-            start = self.font_medium.render("PRESS ENTER TO START", True, WHITE)
-            self.screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 200))
-            self.screen.blit(start, (SCREEN_WIDTH // 2 - start.get_width() // 2, 400))
-            
-            controls = ["Q/D - Move", "SPACE - Jump", "A - Dash", "LEFT CLICK - Basic Attack", "RIGHT CLICK - Charged Attack", "F - Parry", "ESC - Quit"]
-            y = 500
-            for ctrl in controls:
-                text = self.font_small.render(ctrl, True, WHITE)
-                self.screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y))
-                y += 30
+        if self.state == GameState.MAIN_MENU:
+            self.menu.draw_main_menu(self.screen)
+        
+        elif self.state == GameState.SHOP:
+            self.menu.draw_shop(self.screen, self.shop, self.currency)
+        
+        elif self.state == GameState.SETTINGS:
+            self.menu.draw_settings(self.screen)
         
         elif self.state == GameState.PLAYING:
+            # Draw game arena
             for platform in self.platforms:
-                pygame.draw.rect(self.screen, PURPLE, (platform.x - self.camera_x, platform.y - self.camera_y, platform.width, platform.height))
+                # Only draw platforms if they're visible (Phase 2 mechanic)
+                if self.platforms_visible:
+                    pygame.draw.rect(self.screen, PURPLE, (platform.x - self.camera_x, platform.y - self.camera_y, platform.width, platform.height))
+                else:
+                    # Draw faded platforms when invisible
+                    s = pygame.Surface((platform.width, platform.height))
+                    s.set_alpha(50)
+                    s.fill(PURPLE)
+                    self.screen.blit(s, (platform.x - self.camera_x, platform.y - self.camera_y))
             
             for wall in self.temp_walls:
                 pygame.draw.rect(self.screen, DARK_PURPLE, (wall['rect'].x - self.camera_x, wall['rect'].y - self.camera_y, wall['rect'].width, wall['rect'].height))
@@ -995,8 +1789,10 @@ class Game:
                 else:
                     pygame.draw.rect(self.screen, RED, (laser['rect'].x - self.camera_x, 0, laser['rect'].width, SCREEN_HEIGHT))
             
-            self.boss.draw(self.screen, self.camera_x, self.camera_y)
-            self.player.draw(self.screen, self.camera_x, self.camera_y)
+            if self.boss:
+                self.boss.draw(self.screen, self.camera_x, self.camera_y)
+            if self.player:
+                self.player.draw(self.screen, self.camera_x, self.camera_y)
             
             for proj in self.projectiles:
                 proj.draw(self.screen, self.camera_x, self.camera_y)
@@ -1007,8 +1803,25 @@ class Game:
             for orb in self.healing_orbs:
                 orb.draw(self.screen, self.camera_x, self.camera_y)
             
+            # Currency HUD
+            currency_text = self.menu.font_small.render(f"Currency: {self.currency}", True, YELLOW)
+            self.screen.blit(currency_text, (10, 10))
+            
+            # Platform hazard warning (Phase 2)
+            if self.platform_hazard_active and self.boss and self.boss.phase == 2:
+                if not self.platforms_visible:
+                    warning = self.menu.font_medium.render("PLATFORMS DISABLED!", True, RED)
+                    self.screen.blit(warning, (SCREEN_WIDTH // 2 - warning.get_width() // 2, 100))
+                    timer_text = self.menu.font_small.render(f"{self.platform_disappear_timer // 60 + 1}s", True, RED)
+                    self.screen.blit(timer_text, (SCREEN_WIDTH // 2 - timer_text.get_width() // 2, 140))
+                else:
+                    # Show countdown to next disappearance
+                    if self.platform_disappear_timer <= 300:  # Last 5 seconds
+                        warning = self.menu.font_small.render(f"Platforms disappearing in {self.platform_disappear_timer // 60 + 1}s", True, ORANGE)
+                        self.screen.blit(warning, (SCREEN_WIDTH // 2 - warning.get_width() // 2, 100))
+            
             # Debug mode
-            if self.debug_mode:
+            if self.debug_mode and self.player and self.boss:
                 # Draw player rect
                 pygame.draw.rect(self.screen, GREEN, (self.player.x - self.camera_x, self.player.y - self.camera_y, self.player.width, self.player.height), 2)
                 # Draw boss rect
@@ -1021,87 +1834,94 @@ class Game:
                     f"Minions: {len(self.minions)}",
                     f"Fire zones: {len(self.fire_zones)}",
                     f"Godmode: {self.godmode}",
-                    f"Boss inv: {self.boss_invincible}"
+                    f"Boss inv: {self.boss_invincible}",
+                    f"Phase: {self.boss.phase}",
+                    f"Platforms: {'Visible' if self.platforms_visible else 'Hidden'}"
                 ]
                 for i, stat in enumerate(stats):
-                    text = self.font_small.render(stat, True, WHITE)
-                    self.screen.blit(text, (10, 100 + i * 25))
+                    text = self.menu.font_tiny.render(stat, True, WHITE)
+                    self.screen.blit(text, (10, 100 + i * 20))
+        
+        elif self.state == GameState.PAUSED:
+            # Draw game in background
+            for platform in self.platforms:
+                pygame.draw.rect(self.screen, PURPLE, (platform.x - self.camera_x, platform.y - self.camera_y, platform.width, platform.height))
+            
+            if self.boss:
+                self.boss.draw(self.screen, self.camera_x, self.camera_y)
+            if self.player:
+                self.player.draw(self.screen, self.camera_x, self.camera_y)
+            
+            self.menu.draw_pause_menu(self.screen)
         
         elif self.state == GameState.GAME_OVER:
-            text = self.font_large.render("GAME OVER", True, RED)
-            restart = self.font_medium.render("PRESS ENTER TO RESTART", True, WHITE)
+            text = self.menu.font_large.render("GAME OVER", True, RED)
+            restart = self.menu.font_medium.render("PRESS ENTER TO CONTINUE", True, WHITE)
             self.screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 250))
             self.screen.blit(restart, (SCREEN_WIDTH // 2 - restart.get_width() // 2, 400))
         
         elif self.state == GameState.VICTORY:
-            text = self.font_large.render("VICTORY!", True, GREEN)
-            restart = self.font_medium.render("PRESS ENTER TO RESTART", True, WHITE)
-            self.screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 250))
+            text = self.menu.font_large.render("VICTORY!", True, GREEN)
+            reward = self.menu.font_medium.render("+1000 Currency", True, YELLOW)
+            restart = self.menu.font_medium.render("PRESS ENTER TO CONTINUE", True, WHITE)
+            self.screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 200))
+            self.screen.blit(reward, (SCREEN_WIDTH // 2 - reward.get_width() // 2, 300))
             self.screen.blit(restart, (SCREEN_WIDTH // 2 - restart.get_width() // 2, 400))
         
-        # Draw admin panel
+        # Admin login screen
         if self.admin_login_mode:
-            # Login screen
             panel_surface = pygame.Surface((600, 300))
             panel_surface.set_alpha(230)
             panel_surface.fill(BLACK)
             self.screen.blit(panel_surface, (SCREEN_WIDTH // 2 - 300, SCREEN_HEIGHT // 2 - 150))
             
-            # Border
             pygame.draw.rect(self.screen, PURPLE, (SCREEN_WIDTH // 2 - 300, SCREEN_HEIGHT // 2 - 150, 600, 300), 3)
             
-            # Title
-            title = self.font_large.render("ADMIN LOGIN", True, PURPLE)
+            title = self.menu.font_large.render("ADMIN LOGIN", True, PURPLE)
             self.screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, SCREEN_HEIGHT // 2 - 130))
             
-            # Username field
-            username_label = self.font_medium.render("Username:", True, WHITE)
+            username_label = self.menu.font_medium.render("Username:", True, WHITE)
             self.screen.blit(username_label, (SCREEN_WIDTH // 2 - 250, SCREEN_HEIGHT // 2 - 50))
             username_box = pygame.Rect(SCREEN_WIDTH // 2 - 250, SCREEN_HEIGHT // 2 - 10, 500, 40)
             pygame.draw.rect(self.screen, DARK_PURPLE if self.admin_input_field == "username" else (50, 50, 50), username_box)
             pygame.draw.rect(self.screen, PURPLE if self.admin_input_field == "username" else WHITE, username_box, 2)
-            username_text = self.font_medium.render(self.admin_username, True, WHITE)
+            username_text = self.menu.font_medium.render(self.admin_username, True, WHITE)
             self.screen.blit(username_text, (SCREEN_WIDTH // 2 - 240, SCREEN_HEIGHT // 2 - 5))
             
-            # Password field
-            password_label = self.font_medium.render("Password:", True, WHITE)
+            password_label = self.menu.font_medium.render("Password:", True, WHITE)
             self.screen.blit(password_label, (SCREEN_WIDTH // 2 - 250, SCREEN_HEIGHT // 2 + 50))
             password_box = pygame.Rect(SCREEN_WIDTH // 2 - 250, SCREEN_HEIGHT // 2 + 90, 500, 40)
             pygame.draw.rect(self.screen, DARK_PURPLE if self.admin_input_field == "password" else (50, 50, 50), password_box)
             pygame.draw.rect(self.screen, PURPLE if self.admin_input_field == "password" else WHITE, password_box, 2)
             password_masked = "*" * len(self.admin_password)
-            password_text = self.font_medium.render(password_masked, True, WHITE)
+            password_text = self.menu.font_medium.render(password_masked, True, WHITE)
             self.screen.blit(password_text, (SCREEN_WIDTH // 2 - 240, SCREEN_HEIGHT // 2 + 95))
             
-            # Instructions
             if self.admin_login_attempts > 0:
-                attempts_text = self.font_small.render(f"Failed attempts: {self.admin_login_attempts}/3", True, RED)
+                attempts_text = self.menu.font_small.render(f"Failed attempts: {self.admin_login_attempts}/3", True, RED)
                 self.screen.blit(attempts_text, (SCREEN_WIDTH // 2 - attempts_text.get_width() // 2, SCREEN_HEIGHT // 2 + 140))
             
-            hint = self.font_small.render("Press ENTER to submit | ESC to cancel", True, YELLOW)
+            hint = self.menu.font_tiny.render("Press ENTER to submit | ESC to cancel", True, YELLOW)
             self.screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2, SCREEN_HEIGHT // 2 + 160))
         
+        # Admin panel
         elif self.admin_panel_active and self.admin_authenticated:
-            # Semi-transparent background
             panel_surface = pygame.Surface((SCREEN_WIDTH, 400))
             panel_surface.set_alpha(200)
             panel_surface.fill(BLACK)
             self.screen.blit(panel_surface, (0, SCREEN_HEIGHT - 400))
             
-            # Title
-            title = self.font_medium.render("ADMIN PANEL (F2 to close)", True, YELLOW)
+            title = self.menu.font_medium.render("ADMIN PANEL (F2 to close)", True, YELLOW)
             self.screen.blit(title, (20, SCREEN_HEIGHT - 390))
             
-            # History
             y = SCREEN_HEIGHT - 350
             for line in self.admin_history[-12:]:
-                text = self.font_small.render(line, True, GREEN)
+                text = self.menu.font_tiny.render(line, True, GREEN)
                 self.screen.blit(text, (20, y))
                 y += 25
             
-            # Input line
             input_text = f"> {self.admin_input}_"
-            input_surface = self.font_small.render(input_text, True, WHITE)
+            input_surface = self.menu.font_tiny.render(input_text, True, WHITE)
             pygame.draw.rect(self.screen, DARK_PURPLE, (10, SCREEN_HEIGHT - 50, SCREEN_WIDTH - 20, 40))
             self.screen.blit(input_surface, (20, SCREEN_HEIGHT - 45))
         
@@ -1112,7 +1932,7 @@ class Game:
             self.handle_events()
             self.update()
             self.draw()
-            self.clock.tick(FPS)
+            self.clock.tick(int(FPS * self.menu.game_speed))
         
         pygame.quit()
 
