@@ -1,64 +1,71 @@
-🎮 PANNEAU ADMIN - Activation avec F2
-📋 Commandes disponibles :
-👤 Joueur :
+🎮 COMPLETE ADMIN PANEL (Activate with F2)
+📋 All Available Commands:
+👤 Player Commands:
 
-godmode on/off - Invincibilité
-set hp <valeur> - Change la vie
-set max_hp <valeur> - Change la vie max
-set speed <valeur> - Change la vitesse
-set jump <valeur> - Change le saut
-set dash <valeur> - Change le dash
-tp <x> <y> - Téléporte le joueur
-heal - Soigne à 100%
-reset_player - Reset le joueur
-parry on/off - Active/désactive le parry
-charge <valeur> - Fixe la charge
-basic_attack - Force une attaque
-release_charge - Lance l'attaque chargée
+godmode on/off - Invincibility
+set hp <value> - Change HP
+set max_hp <value> - Change max HP
+set speed <value> - Change speed
+set jump <value> - Change jump power
+set dash <value> - Change dash speed
+tp <x> <y> - Teleport player
+heal - Heal to 100%
+reset_player - Reset player
+parry on/off - Toggle parry
+charge <value> - Set charge percentage
+basic_attack - Force basic attack
+release_charge - Release charged attack
 
-👹 Boss :
+👹 Boss Commands:
 
-kill boss - Tue le boss
-boss_hp <valeur> - Change la vie du boss
-boss phase1 / boss phase2 - Change la phase
-boss reset - Reset le boss
-boss teleport <x> <y> - Téléporte le boss
-boss invincible on/off - Invincibilité boss
+kill boss - Kill the boss
+boss_hp <value> - Set boss HP
+boss phase1 - Force Phase 1
+boss phase2 - Force Phase 2 (rotates platforms + hazard)
+boss reset - Reset boss
+boss teleport <x> <y> - Teleport boss
+boss invincible on/off - Boss invincibility
 boss fireball - Spawn fireballs
 boss laser - Spawn laser
 boss shockwave - Spawn shockwave
-boss summon_minions <nombre> - Spawn minions
-boss cooldowns reset - Reset cooldowns
-boss phase <1/2> - Force une phase
+boss summon_minions <number> - Spawn minions
+boss cooldowns reset - Reset all cooldowns
+boss phase <1/2> - Force specific phase
 
-🔥 Spawn :
+🔥 Spawn Commands:
 
-spawn lava <x> <y> - Crée zone de lave
+spawn lava <x> <y> - Create lava zone
 spawn fireball <x> <y> - Spawn fireball
 spawn minion <x> <y> - Spawn minion
-spawn orb <x> <y> - Spawn orb de soin
-spawn temp_wall <x> <y> - Spawn mur temporaire
+spawn orb <x> <y> - Spawn healing orb
+spawn temp_wall <x> <y> - Spawn temporary wall
 
-🗑️ Clear :
+🗑️ Clear Commands:
 
-clear projectiles - Supprime tous les projectiles
-clear minions - Supprime tous les minions
-clear fire - Supprime toutes les zones de feu
-clear orbs - Supprime tous les orbs
+clear projectiles - Remove all projectiles
+clear minions - Remove all minions
+clear fire - Remove all fire zones
+clear orbs - Remove all healing orbs
 
-🎯 Game State :
+🎯 Game State Commands:
 
-win - Victoire immédiate
-lose - Game over immédiat
-restart - Relance le jeu
-pause on/off - Pause le jeu
+win - Instant victory
+lose - Instant game over
+restart - Restart game
+pause on/off - Pause/unpause game
 
-📷 Caméra & Debug :
+📷 Camera & Debug:
 
-camera <x> <y> - Positionne la caméra
-camera follow on/off - Active/désactive le suivi
-debug on/off - Affiche hitboxes et stats
+camera <x> <y> - Position camera
+camera follow on/off - Toggle camera follow
+debug on/off - Show hitboxes and debug stats
 
-currency <amount> - Set currency to exact amount
-give <amount> - Add currency to current total (new command)
-Example: give 500 adds 500 credits
+💰 Currency & Other:
+
+currency <amount> - Set currency
+give <amount> - Add currency
+save - Save game
+unlock_all - Unlock all shop items
+boss_phase2 - Activate Boss Phase 2
+logout - Exit admin panel
+help - Show commands list
