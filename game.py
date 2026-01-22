@@ -459,9 +459,19 @@ class Player:
         self.parrying = False
         self.fire_slow = False
         self.burn_damage_timer = 0
+        
+        # Animation state
+        self.visual_x = self.x
+        self.visual_y = self.y
+        self.facing_right = True
+        self.animation_timer = 0
+        self.squash_stretch = 1.0  # For jump/land animations
+        self.dash_trail = []  # Trail effect for dash
     
     def update(self, platforms, walls, temp_walls, fire_zones, mouse_pos, camera_x, camera_y, game_instance=None):
         keys = pygame.key.get_pressed()
+        
+        self.animation_timer += 1
         
         if self.dash_cooldown > 0:
             self.dash_cooldown -= 1
@@ -481,10 +491,22 @@ class Player:
             self.vel_x = self.dash_speed * self.dash_direction
             self.vel_y = 0
             self.invulnerable = True
+            
+            # Dash trail effect
+            self.dash_trail.append({'x': self.x, 'y': self.y, 'alpha': 150})
+            if len(self.dash_trail) > 5:
+                self.dash_trail.pop(0)
+            
             if self.dash_timer <= 0:
                 self.dashing = False
                 self.invulnerable = False
+                self.dash_trail.clear()
         else:
+            # Fade out dash trail
+            for trail in self.dash_trail:
+                trail['alpha'] -= 30
+            self.dash_trail = [t for t in self.dash_trail if t['alpha'] > 0]
+            
             self.vel_x = 0
             speed = self.speed
             
@@ -498,13 +520,23 @@ class Player:
             
             if keys[pygame.K_q]:
                 self.vel_x = -speed
+                self.facing_right = False
             if keys[pygame.K_d]:
                 self.vel_x = speed
+                self.facing_right = True
             
             if self.on_wall and self.vel_y > 0:
                 self.vel_y += self.gravity * 0.3
             else:
                 self.vel_y += self.gravity
+        
+        # Squash and stretch for jump/land
+        if not self.on_ground and self.vel_y < 0:  # Jumping
+            self.squash_stretch = 0.9
+        elif not self.on_ground and self.vel_y > 5:  # Falling fast
+            self.squash_stretch = 1.1
+        else:  # On ground or normal
+            self.squash_stretch += (1.0 - self.squash_stretch) * 0.2
         
         self.x += self.vel_x
         self.check_collision(platforms, walls, temp_walls, 'x')
@@ -531,6 +563,10 @@ class Player:
         
         self.x = max(0, min(self.x, MAP_WIDTH - self.width))
         self.y = max(0, min(self.y, MAP_HEIGHT - self.height))
+        
+        # Smooth visual position
+        self.visual_x += (self.x - self.visual_x) * 0.3
+        self.visual_y += (self.y - self.visual_y) * 0.3
         
         self.fire_slow = False
         player_rect = pygame.Rect(self.x, self.y, self.width, self.height)
@@ -656,41 +692,101 @@ class Player:
             return RED
     
     def draw(self, screen, camera_x, camera_y):
-        x, y = self.x - camera_x, self.y - camera_y
-        color = YELLOW if self.dashing else BLUE
-        pygame.draw.rect(screen, color, (x, y, self.width, self.height))
+        x, y = self.visual_x - camera_x, self.visual_y - camera_y
+        
+        # Draw dash trail
+        for i, trail in enumerate(self.dash_trail):
+            alpha = trail['alpha']
+            trail_surf = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+            trail_surf.fill((*YELLOW, alpha))
+            screen.blit(trail_surf, (trail['x'] - camera_x, trail['y'] - camera_y))
+        
+        # Apply squash and stretch
+        draw_width = self.width
+        draw_height = int(self.height * self.squash_stretch)
+        height_diff = self.height - draw_height
+        
+        # Player color with effects
+        if self.dashing:
+            color = YELLOW
+            # Add glow effect
+            glow_surf = pygame.Surface((draw_width + 20, draw_height + 20), pygame.SRCALPHA)
+            pygame.draw.rect(glow_surf, (*YELLOW, 100), (0, 0, draw_width + 20, draw_height + 20))
+            screen.blit(glow_surf, (x - 10, y + height_diff - 10))
+        elif self.parrying:
+            color = (100, 200, 255)  # Cyan for parry
+            # Parry shield effect
+            shield_radius = 35 + int(abs(math.sin(self.animation_timer * 0.2)) * 5)
+            pygame.draw.circle(screen, (*color, 80), (int(x + draw_width // 2), int(y + draw_height // 2)), shield_radius, 3)
+        else:
+            color = BLUE
+        
+        # Draw player with squash/stretch
+        pygame.draw.rect(screen, color, (x, y + height_diff, draw_width, draw_height))
+        
+        # Directional indicator (simple triangle)
+        if self.facing_right:
+            points = [(x + draw_width, y + height_diff + draw_height // 2),
+                     (x + draw_width - 10, y + height_diff + draw_height // 2 - 5),
+                     (x + draw_width - 10, y + height_diff + draw_height // 2 + 5)]
+        else:
+            points = [(x, y + height_diff + draw_height // 2),
+                     (x + 10, y + height_diff + draw_height // 2 - 5),
+                     (x + 10, y + height_diff + draw_height // 2 + 5)]
+        pygame.draw.polygon(screen, WHITE, points)
         
         if self.charging:
-            center_x, center_y = x + self.width // 2, y + self.height // 2
+            center_x, center_y = x + draw_width // 2, y + height_diff + draw_height // 2
             
             if self.weapon_type == "sniper":
                 # Draw circular POV cursor at mouse position
                 mouse_x, mouse_y = pygame.mouse.get_pos()
-                pygame.draw.circle(screen, RED, (mouse_x, mouse_y), 30, 2)
+                
+                # Animated crosshair
+                crosshair_size = 30 + int(abs(math.sin(self.animation_timer * 0.1)) * 5)
+                pygame.draw.circle(screen, RED, (mouse_x, mouse_y), crosshair_size, 2)
                 pygame.draw.circle(screen, RED, (mouse_x, mouse_y), 5)
-                pygame.draw.line(screen, RED, (mouse_x - 35, mouse_y), (mouse_x - 25, mouse_y), 2)
-                pygame.draw.line(screen, RED, (mouse_x + 35, mouse_y), (mouse_x + 25, mouse_y), 2)
-                pygame.draw.line(screen, RED, (mouse_x, mouse_y - 35), (mouse_x, mouse_y - 25), 2)
-                pygame.draw.line(screen, RED, (mouse_x, mouse_y + 35), (mouse_x, mouse_y + 25), 2)
+                
+                # Crosshair lines with animation
+                line_offset = 25 + int(abs(math.sin(self.animation_timer * 0.1)) * 5)
+                pygame.draw.line(screen, RED, (mouse_x - crosshair_size - 10, mouse_y), (mouse_x - line_offset, mouse_y), 2)
+                pygame.draw.line(screen, RED, (mouse_x + crosshair_size + 10, mouse_y), (mouse_x + line_offset, mouse_y), 2)
+                pygame.draw.line(screen, RED, (mouse_x, mouse_y - crosshair_size - 10), (mouse_x, mouse_y - line_offset), 2)
+                pygame.draw.line(screen, RED, (mouse_x, mouse_y + crosshair_size + 10), (mouse_x, mouse_y + line_offset), 2)
+                
+                # Charge indicator around cursor
+                charge_arc = (self.charge_percent / self.max_charge) * 360
+                if charge_arc > 0:
+                    rect = pygame.Rect(mouse_x - 40, mouse_y - 40, 80, 80)
+                    pygame.draw.arc(screen, self.get_charge_color(), rect, 0, math.radians(charge_arc), 5)
             else:
-                # Regular beam
+                # Regular beam with animated thickness
                 beam_length = 600 if self.weapon_type == "crossbow" else 300
                 end_x = center_x + math.cos(self.aim_angle) * beam_length
                 end_y = center_y + math.sin(self.aim_angle) * beam_length
                 beam_color = self.get_charge_color()
-                thickness = 3 + int(self.charge_percent / 50)
+                thickness = 3 + int(self.charge_percent / 50) + int(abs(math.sin(self.animation_timer * 0.2)) * 2)
+                
+                # Draw beam with glow
+                pygame.draw.line(screen, (*beam_color, 100), (center_x, center_y), (end_x, end_y), thickness + 4)
                 pygame.draw.line(screen, beam_color, (center_x, center_y), (end_x, end_y), thickness)
-                charge_radius = 10 + int(self.charge_percent / 20)
+                
+                # Animated charge indicator
+                charge_radius = 10 + int(self.charge_percent / 20) + int(abs(math.sin(self.animation_timer * 0.15)) * 3)
                 pygame.draw.circle(screen, beam_color, (int(end_x), int(end_y)), charge_radius, 2)
+                pygame.draw.circle(screen, (*beam_color, 50), (int(end_x), int(end_y)), charge_radius + 5, 2)
         
+        # Health bar with smooth transitions
         bar_width, bar_height = 60, 8
         pygame.draw.rect(screen, RED, (x - 10, y - 20, bar_width, bar_height))
         health_width = int((self.hp / self.max_hp) * bar_width)
         pygame.draw.rect(screen, GREEN, (x - 10, y - 20, health_width, bar_height))
         
+        # Dash cooldown with color gradient
         if self.dash_cooldown > 0:
             cooldown_width = int((self.dash_cooldown / self.dash_cooldown_max) * bar_width)
-            pygame.draw.rect(screen, ORANGE, (x - 10, y - 30, cooldown_width, 4))
+            cooldown_color = ORANGE if self.dash_cooldown < 10 else (200, 100, 0)
+            pygame.draw.rect(screen, cooldown_color, (x - 10, y - 30, cooldown_width, 4))
 
 class Boss:
     def __init__(self):
@@ -718,6 +814,16 @@ class Boss:
         self.shockwave_cooldown = 240
         self.minion_cooldown = 360
         self.flash_timer = 0
+        
+        # Phase 2 transition animation
+        self.phase2_transition_active = False
+        self.phase2_transition_timer = 0
+        self.phase2_transition_duration = 180  # 3 seconds at 60 FPS
+        self.phase2_glow_pulse = 0
+        
+        # Smooth movement
+        self.visual_x = self.x
+        self.visual_y = self.y
     
     def update(self):
         if self.fireball_cooldown > 0:
@@ -731,8 +837,21 @@ class Boss:
         if self.flash_timer > 0:
             self.flash_timer -= 1
         
+        # Phase 2 transition
+        if self.phase2_transition_active:
+            self.phase2_transition_timer += 1
+            self.phase2_glow_pulse = abs(math.sin(self.phase2_transition_timer * 0.1)) * 50
+            
+            if self.phase2_transition_timer >= self.phase2_transition_duration:
+                self.phase2_transition_active = False
+                self.phase2_transition_timer = 0
+            return  # Don't move during transition
+        
+        # Check for Phase 2 entry
         if self.hp <= self.max_hp // 2 and self.phase == 1:
             self.phase = 2
+            self.phase2_transition_active = True
+            self.phase2_transition_timer = 0
             self.fireball_cooldown_max = self.fireball_cooldown_max_base // 3
             self.laser_cooldown_max = self.laser_cooldown_max_base // 3
             self.shockwave_cooldown_max = self.shockwave_cooldown_max_base // 3
@@ -747,6 +866,10 @@ class Boss:
         
         self.move_timer -= 1
         self.x = max(100, min(self.x, MAP_WIDTH - 100))
+        
+        # Smooth visual position
+        self.visual_x += (self.x - self.visual_x) * 0.3
+        self.visual_y += (self.y - self.visual_y) * 0.3
     
     def take_damage(self, damage):
         self.hp -= damage
@@ -754,10 +877,47 @@ class Boss:
         self.flash_timer = 5
     
     def draw(self, screen, camera_x, camera_y):
-        x, y = self.x - camera_x, self.y - camera_y
-        color = WHITE if self.flash_timer > 0 else (RED if self.phase == 2 else PURPLE)
-        pygame.draw.rect(screen, color, (x, y, self.width, self.height))
+        x, y = self.visual_x - camera_x, self.visual_y - camera_y
         
+        # Phase 2 transition effect
+        if self.phase2_transition_active:
+            # Pulsing glow effect
+            glow_radius = int(120 + self.phase2_glow_pulse)
+            for i in range(3):
+                alpha_surf = pygame.Surface((glow_radius * 2, glow_radius * 2), pygame.SRCALPHA)
+                alpha = int(100 - i * 30)
+                pygame.draw.circle(alpha_surf, (*RED, alpha), (glow_radius, glow_radius), glow_radius - i * 20)
+                screen.blit(alpha_surf, (x + self.width // 2 - glow_radius, y + self.height // 2 - glow_radius))
+            
+            # Oscillating color
+            progress = self.phase2_transition_timer / self.phase2_transition_duration
+            color_intensity = int(abs(math.sin(progress * math.pi * 4)) * 255)
+            transition_color = (color_intensity, 0, 255 - color_intensity)
+            pygame.draw.rect(screen, transition_color, (x, y, self.width, self.height))
+            
+            # Energy particles
+            for i in range(8):
+                angle = (self.phase2_transition_timer + i * 45) * 0.1
+                particle_x = x + self.width // 2 + math.cos(angle) * 80
+                particle_y = y + self.height // 2 + math.sin(angle) * 80
+                particle_size = 5 + int(abs(math.sin(angle * 2)) * 5)
+                pygame.draw.circle(screen, ORANGE, (int(particle_x), int(particle_y)), particle_size)
+        else:
+            # Normal boss rendering
+            color = WHITE if self.flash_timer > 0 else (RED if self.phase == 2 else PURPLE)
+            
+            # Phase 2 subtle glow
+            if self.phase == 2:
+                glow_pulse = abs(math.sin(pygame.time.get_ticks() * 0.003)) * 20
+                for i in range(2):
+                    alpha_surf = pygame.Surface((self.width + 20, self.height + 20), pygame.SRCALPHA)
+                    alpha = int(50 - i * 20)
+                    pygame.draw.rect(alpha_surf, (*RED, alpha), (0, 0, self.width + 20, self.height + 20))
+                    screen.blit(alpha_surf, (x - 10, y - 10))
+            
+            pygame.draw.rect(screen, color, (x, y, self.width, self.height))
+        
+        # Health bar
         bar_width, bar_height = 400, 20
         bar_x = SCREEN_WIDTH // 2 - bar_width // 2
         pygame.draw.rect(screen, RED, (bar_x, 20, bar_width, bar_height))
@@ -1370,6 +1530,10 @@ class Game:
     def boss_ai(self):
         if not self.boss or not self.player:
             return
+        
+        # Don't attack during Phase 2 transition
+        if self.boss.phase2_transition_active:
+            return
             
         multiplier = 3 if self.boss.phase == 2 else 1
         
@@ -1417,6 +1581,19 @@ class Game:
         
         if self.paused or self.state != GameState.PLAYING:
             return
+        
+        # Slow down gameplay during boss Phase 2 transition
+        if self.boss and self.boss.phase2_transition_active:
+            # Update boss transition animation
+            self.boss.update()
+            
+            # Trigger platform rotation on transition start
+            if self.boss.phase2_transition_timer == 1:
+                self.rotate_platforms_phase2()
+                self.platform_hazard_active = True
+                self.platform_disappear_timer = 1200
+            
+            return  # Pause other game logic during transition
             
         if self.state == GameState.PLAYING and self.player and self.boss:
             mouse_pos = pygame.mouse.get_pos()
@@ -1769,24 +1946,52 @@ class Game:
             for platform in self.platforms:
                 # Only draw platforms if they're visible (Phase 2 mechanic)
                 if self.platforms_visible:
+                    # Add subtle glow to platforms in Phase 2
+                    if self.boss and self.boss.phase == 2:
+                        glow_surf = pygame.Surface((platform.width + 10, platform.height + 10), pygame.SRCALPHA)
+                        glow_surf.fill((*PURPLE, 30))
+                        screen.blit(glow_surf, (platform.x - camera_x - 5, platform.y - camera_y - 5))
+                    
                     pygame.draw.rect(self.screen, PURPLE, (platform.x - self.camera_x, platform.y - self.camera_y, platform.width, platform.height))
                 else:
-                    # Draw faded platforms when invisible
+                    # Draw faded platforms when invisible with pulsing effect
+                    pulse = int(abs(math.sin(pygame.time.get_ticks() * 0.005)) * 30) + 20
                     s = pygame.Surface((platform.width, platform.height))
-                    s.set_alpha(50)
+                    s.set_alpha(pulse)
                     s.fill(PURPLE)
                     self.screen.blit(s, (platform.x - self.camera_x, platform.y - self.camera_y))
             
             for wall in self.temp_walls:
-                pygame.draw.rect(self.screen, DARK_PURPLE, (wall['rect'].x - self.camera_x, wall['rect'].y - self.camera_y, wall['rect'].width, wall['rect'].height))
+                # Animated temp walls
+                alpha = int(200 + abs(math.sin(pygame.time.get_ticks() * 0.003)) * 55)
+                wall_surf = pygame.Surface((wall['rect'].width, wall['rect'].height), pygame.SRCALPHA)
+                wall_surf.fill((*DARK_PURPLE, alpha))
+                self.screen.blit(wall_surf, (wall['rect'].x - self.camera_x, wall['rect'].y - self.camera_y))
             
             for fire in self.fire_zones:
-                pygame.draw.rect(self.screen, RED, (fire['rect'].x - self.camera_x, fire['rect'].y - self.camera_y, fire['rect'].width, fire['rect'].height))
+                # Animated fire with flickering
+                flicker = int(abs(math.sin(pygame.time.get_ticks() * 0.01)) * 20)
+                fire_color = (255, flicker, 0)
+                pygame.draw.rect(self.screen, fire_color, (fire['rect'].x - self.camera_x, fire['rect'].y - self.camera_y, fire['rect'].width, fire['rect'].height))
+                
+                # Add fire particles
+                for i in range(3):
+                    offset = random.randint(-10, 10)
+                    particle_y = fire['rect'].y - random.randint(0, 20)
+                    particle_size = random.randint(2, 5)
+                    pygame.draw.circle(self.screen, ORANGE, (fire['rect'].x + fire['rect'].width // 2 + offset - self.camera_x, particle_y - self.camera_y), particle_size)
             
             for laser in self.lasers:
                 if laser['timer'] > laser['fire_frame']:
-                    pygame.draw.rect(self.screen, YELLOW, (laser['rect'].x - self.camera_x, 0, laser['rect'].width, SCREEN_HEIGHT), 3)
+                    # Warning phase with pulsing
+                    pulse = int(abs(math.sin(laser['timer'] * 0.2)) * 100) + 100
+                    pygame.draw.rect(self.screen, (*YELLOW, pulse), (laser['rect'].x - self.camera_x, 0, laser['rect'].width, SCREEN_HEIGHT), 3)
                 else:
+                    # Active laser with glow
+                    glow_width = laser['rect'].width + 20
+                    glow_surf = pygame.Surface((glow_width, SCREEN_HEIGHT), pygame.SRCALPHA)
+                    glow_surf.fill((*RED, 100))
+                    self.screen.blit(glow_surf, (laser['rect'].x - self.camera_x - 10, 0))
                     pygame.draw.rect(self.screen, RED, (laser['rect'].x - self.camera_x, 0, laser['rect'].width, SCREEN_HEIGHT))
             
             if self.boss:
@@ -1810,6 +2015,12 @@ class Game:
             # Platform hazard warning (Phase 2)
             if self.platform_hazard_active and self.boss and self.boss.phase == 2:
                 if not self.platforms_visible:
+                    # Animated warning with pulse
+                    pulse_alpha = int(abs(math.sin(pygame.time.get_ticks() * 0.01)) * 100) + 155
+                    warning_surf = pygame.Surface((SCREEN_WIDTH, 60), pygame.SRCALPHA)
+                    warning_surf.fill((*RED, pulse_alpha // 2))
+                    self.screen.blit(warning_surf, (0, 80))
+                    
                     warning = self.menu.font_medium.render("PLATFORMS DISABLED!", True, RED)
                     self.screen.blit(warning, (SCREEN_WIDTH // 2 - warning.get_width() // 2, 100))
                     timer_text = self.menu.font_small.render(f"{self.platform_disappear_timer // 60 + 1}s", True, RED)
@@ -1817,8 +2028,39 @@ class Game:
                 else:
                     # Show countdown to next disappearance
                     if self.platform_disappear_timer <= 300:  # Last 5 seconds
-                        warning = self.menu.font_small.render(f"Platforms disappearing in {self.platform_disappear_timer // 60 + 1}s", True, ORANGE)
+                        urgency_color = RED if self.platform_disappear_timer <= 120 else ORANGE
+                        pulse = int(abs(math.sin(pygame.time.get_ticks() * 0.015)) * 50) + 50
+                        warning = self.menu.font_small.render(f"Platforms disappearing in {self.platform_disappear_timer // 60 + 1}s", True, urgency_color)
+                        warning_surf = pygame.Surface((warning.get_width() + 20, 40), pygame.SRCALPHA)
+                        warning_surf.fill((*urgency_color, pulse))
+                        self.screen.blit(warning_surf, (SCREEN_WIDTH // 2 - warning.get_width() // 2 - 10, 90))
                         self.screen.blit(warning, (SCREEN_WIDTH // 2 - warning.get_width() // 2, 100))
+            
+            # Boss Phase 2 transition overlay
+            if self.boss and self.boss.phase2_transition_active:
+                # Dark overlay
+                overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+                alpha = int(abs(math.sin(self.boss.phase2_transition_timer * 0.05)) * 100)
+                overlay.fill((*BLACK, alpha))
+                self.screen.blit(overlay, (0, 0))
+                
+                # Phase 2 announcement
+                progress = self.boss.phase2_transition_timer / self.boss.phase2_transition_duration
+                if progress < 0.5:
+                    scale = progress * 4
+                    font_size = int(72 * scale)
+                    if font_size > 0:
+                        phase_font = pygame.font.Font(None, font_size)
+                        phase_text = phase_font.render("PHASE 2", True, RED)
+                        self.screen.blit(phase_text, (SCREEN_WIDTH // 2 - phase_text.get_width() // 2, SCREEN_HEIGHT // 2 - 50))
+                else:
+                    phase_font = pygame.font.Font(None, 72)
+                    phase_text = phase_font.render("PHASE 2", True, RED)
+                    pulse_alpha = int(abs(math.sin(progress * math.pi * 8)) * 255)
+                    phase_surf = pygame.Surface((phase_text.get_width(), phase_text.get_height()), pygame.SRCALPHA)
+                    phase_surf.blit(phase_text, (0, 0))
+                    phase_surf.set_alpha(pulse_alpha)
+                    self.screen.blit(phase_surf, (SCREEN_WIDTH // 2 - phase_text.get_width() // 2, SCREEN_HEIGHT // 2 - 50))
             
             # Debug mode
             if self.debug_mode and self.player and self.boss:
