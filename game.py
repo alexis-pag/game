@@ -32,6 +32,8 @@ class GameState(Enum):
     PAUSED = 5
     SHOP = 6
     SETTINGS = 7
+    CHARACTER_SELECT = 8
+    QUEST_MENU = 9
 
 class Item:
     def __init__(self, name, item_type, level, price, damage=0, hp_bonus=0, description=""):
@@ -66,8 +68,8 @@ class Item:
 class SaveManager:
     def __init__(self):
         self.save_file = "game_meta_save.json"
-    
-    def save_meta_progression(self, currency, items):
+
+    def save_meta_progression(self, currency, items, unlocked_classes):
         """Save ONLY meta progression data - never runtime state"""
         # Extract only owned items and their equipped status
         owned_items = []
@@ -79,13 +81,13 @@ class SaveManager:
                     'level': item.level,
                     'equipped': item.equipped
                 })
-        
+
         # Find highest unlocked tiers
         highest_armor = 0
         highest_weapon = 0
         default_armor = None
         default_weapon = None
-        
+
         for item_data in owned_items:
             if item_data['type'] == 'armor':
                 highest_armor = max(highest_armor, item_data['level'])
@@ -95,7 +97,7 @@ class SaveManager:
                 highest_weapon = max(highest_weapon, item_data['level'])
                 if item_data['equipped']:
                     default_weapon = item_data['name']
-        
+
         meta_data = {
             'total_credits': currency,
             'owned_items': owned_items,
@@ -103,10 +105,11 @@ class SaveManager:
             'highest_weapon_tier': highest_weapon,
             'default_armor': default_armor,
             'default_weapon': default_weapon,
+            'unlocked_classes': list(unlocked_classes),
             # Meta unlocks
             'unlocked_boss_phases': []  # Could add phase unlocks here
         }
-        
+
         try:
             with open(self.save_file, 'w') as f:
                 json.dump(meta_data, f, indent=4)
@@ -119,11 +122,11 @@ class SaveManager:
         """Load ONLY meta progression data - never runtime state"""
         if not os.path.exists(self.save_file):
             return None
-        
+
         try:
             with open(self.save_file, 'r') as f:
                 meta_data = json.load(f)
-            
+
             # Restore item ownership and equipped status
             for item_data in meta_data['owned_items']:
                 for item in items_catalog:
@@ -131,11 +134,14 @@ class SaveManager:
                         item.owned = True
                         item.equipped = item_data['equipped']
                         break
-            
-            return meta_data
+
+            # Restore unlocked classes
+            unlocked_classes = set(meta_data.get('unlocked_classes', []))
+
+            return meta_data, unlocked_classes
         except Exception as e:
             print(f"Meta load error: {e}")
-            return None
+            return None, set()
     
     def save_exists(self):
         return os.path.exists(self.save_file)
@@ -286,6 +292,46 @@ class Menu:
         self.main_options = ["Start Game", "Shop", "Settings", "Exit (F5)"]  # REMOVED "Load Game"
         self.pause_options = ["Return to Menu (Run Lost)", "Quit Game (F5)"]  # CHANGED pause options
         self.settings_options = ["Volume: 50%", "Speed: Normal", "Back"]
+        self.character_options = ["Warrior", "Mage", "Archer", "Rogue", "Reaver"]
+        
+        self.character_stats = {
+            "Base": {
+                "base_hp": 100,
+                "passives": [],
+                "active_buffs": [],
+                "hp_bonus": 0
+            },
+            "Warrior": {
+                "base_hp": 120,
+                "passives": ["Resilient: +10 Max HP", "Counter Strike: 20% melee damage to attacker after parry"],
+                "active_buffs": ["Shield Stance: -15% damage for 8s", "Berserk: +20% melee damage for 5s after parry"],
+                "hp_bonus": 10
+            },
+            "Mage": {
+                "base_hp": 90,
+                "passives": ["Mana Affinity: 5% mana regen/s", "Spell Mastery: +15% magic damage on DoT targets"],
+                "active_buffs": ["Arcane Surge: +20% cast speed for 6s", "Elemental Shield: -25% magic damage received for 5s"],
+                "hp_bonus": 0
+            },
+            "Archer": {
+                "base_hp": 95,
+                "passives": ["Critical Eye: +10% crit chance", "Marksmanship: +15% ranged damage on immobilized targets"],
+                "active_buffs": ["Focus Shot: +40% next attack damage", "Evasive Roll: Complete dodge for 0.8s"],
+                "hp_bonus": 0
+            },
+            "Rogue": {
+                "base_hp": 90,
+                "passives": ["Agility: +10% move speed", "Critical Timing: +15% damage on consecutive attacks (2s)"],
+                "active_buffs": ["Shadow Dash: Immunity to CC for 1s", "Backstab: +25% damage from behind"],
+                "hp_bonus": 0
+            },
+            "Reaver": {
+                "base_hp": 100,
+                "passives": ["Life Stealer: +5% HP recovered per attack", "Survivor's Instinct: Below 20 HP, +25% regen for 4s"],
+                "active_buffs": ["Siphon Strike: Heal 25% damage dealt for 5s", "Crimson Aura: 5 HP/s regen while enemies nearby"],
+                "hp_bonus": 0
+            }
+        }
         
         self.selected = 0
         self.volume = 50
@@ -301,6 +347,8 @@ class Menu:
             options = self.pause_options
         elif current_state == GameState.SETTINGS:
             options = self.settings_options
+        elif current_state == GameState.CHARACTER_SELECT:
+            options = self.character_options
         else:
             return
         
@@ -369,6 +417,96 @@ class Menu:
         hint = self.font_tiny.render("Left/Right: Adjust | Enter: Select", True, GRAY)
         screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2, SCREEN_HEIGHT - 50))
     
+    def draw_character_selection(self, screen, unlocked_classes):
+        screen.fill(BLACK)
+
+        title = self.font_large.render("SELECT YOUR CLASS", True, PURPLE)
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 50))
+
+        # Filter available classes
+        available_classes = ["Base"] + [cls for cls in self.character_options if cls in unlocked_classes]
+
+        # Draw class options on the left
+        y = 150
+        for i, option in enumerate(available_classes):
+            color = YELLOW if i == self.selected else WHITE
+            text = self.font_medium.render(option, True, color)
+            screen.blit(text, (100, y))
+            y += 60
+
+        # Draw selected class details on the right
+        selected_class = available_classes[self.selected] if self.selected < len(available_classes) else "Base"
+        stats = self.character_stats[selected_class]
+
+        detail_x = SCREEN_WIDTH // 2
+        pygame.draw.rect(screen, DARK_GRAY, (detail_x - 20, 140, 550, 450))
+        pygame.draw.rect(screen, PURPLE, (detail_x - 20, 140, 550, 450), 2)
+
+        class_title = self.font_large.render(selected_class.upper(), True, YELLOW)
+        screen.blit(class_title, (detail_x, 150))
+
+        hp_text = self.font_medium.render(f"Base HP: {stats['base_hp']}", True, RED)
+        screen.blit(hp_text, (detail_x, 220))
+
+        # Passives
+        passives_label = self.font_small.render("PASSIVES:", True, BLUE)
+        screen.blit(passives_label, (detail_x, 280))
+        y_p = 310
+        for passive in stats['passives']:
+            p_text = self.font_tiny.render(f"• {passive}", True, WHITE)
+            screen.blit(p_text, (detail_x + 20, y_p))
+            y_p += 25
+
+        # Active Buffs
+        buffs_label = self.font_small.render("ACTIVE BUFFS:", True, GREEN)
+        screen.blit(buffs_label, (detail_x, 380))
+        y_b = 410
+        for buff in stats['active_buffs']:
+            b_text = self.font_tiny.render(f"• {buff}", True, WHITE)
+            screen.blit(b_text, (detail_x + 20, y_b))
+            y_b += 25
+
+        hint = self.font_tiny.render("Navigate: Arrow Keys | Select: Enter | Back: ESC", True, GRAY)
+        screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2, SCREEN_HEIGHT - 50))
+
+    def draw_quest_menu(self, screen, quests, quest_progress):
+        screen.fill(BLACK)
+
+        title = self.font_large.render("QUEST LOG", True, PURPLE)
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 50))
+
+        y = 150
+        for quest_key, quest in quests.items():
+            # Quest name and class
+            name_text = self.font_medium.render(f"{quest['name']} ({quest['class']})", True, WHITE)
+            screen.blit(name_text, (50, y))
+
+            # Progress
+            current_progress = quest_progress.get(quest_key, 0)
+            max_progress = quest['max_progress']
+            progress_text = self.font_small.render(f"Progress: {current_progress}/{max_progress}", True, GRAY)
+            screen.blit(progress_text, (50, y + 40))
+
+            # Completion status
+            if current_progress >= max_progress:
+                status_text = self.font_small.render("COMPLETED", True, GREEN)
+            else:
+                status_text = self.font_small.render("IN PROGRESS", True, YELLOW)
+            screen.blit(status_text, (SCREEN_WIDTH - status_text.get_width() - 50, y + 20))
+
+            # Description
+            desc_text = self.font_tiny.render(quest['description'], True, GRAY)
+            screen.blit(desc_text, (50, y + 70))
+
+            # Reward
+            reward_text = self.font_tiny.render(f"Reward: {quest['reward']}", True, BLUE)
+            screen.blit(reward_text, (50, y + 90))
+
+            y += 130
+
+        hint = self.font_tiny.render("Press Q to close | ESC to close", True, GRAY)
+        screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2, SCREEN_HEIGHT - 50))
+
     def draw_shop(self, screen, shop, currency):
         screen.fill(BLACK)
         
@@ -435,6 +573,7 @@ class Player:
         self.on_ground = False
         self.on_wall = False
         self.wall_side = 0
+        self.was_jumping = False
         
         self.dash_speed, self.dash_duration = 20, 10
         self.dash_cooldown_max, self.dash_cooldown = 30, 0
@@ -458,6 +597,7 @@ class Player:
         
         self.parrying = False
         self.fire_slow = False
+        self.external_slow = 1.0
         self.burn_damage_timer = 0
         
         # Animation state
@@ -467,11 +607,91 @@ class Player:
         self.animation_timer = 0
         self.squash_stretch = 1.0  # For jump/land animations
         self.dash_trail = []  # Trail effect for dash
+        
+        # Character Class specific
+        self.character_class = None
+        self.mana = 100
+        self.max_mana = 100
+        self.mana_regen = 0
+        self.crit_chance = 0.05
+        self.move_speed_bonus = 1.0
+        self.consecutive_attacks = 0
+        self.consecutive_attack_timer = 0
+
+        # Quest progress tracking
+        self.quest_progress = {
+            'warrior_damage': 0,
+            'mage_crystals': 0,
+            'archer_range_damage': 0,
+            'rogue_laser_avoids': 0,
+            'reaver_low_hp_damage': 0
+        }
+        self.laser_damage_taken = False
+        self.consecutive_laser_avoids = 0
+        
+        # Buff timers (in frames)
+        self.buffs = {
+            "shield_stance": 0,
+            "berserk": 0,
+            "arcane_surge": 0,
+            "elemental_shield": 0,
+            "focus_shot": False,
+            "evasive_roll": 0,
+            "shadow_dash": 0,
+            "siphon_strike": 0,
+            "crimson_aura": 0
+        }
+        self.buff_cooldowns = {
+            "buff1": 0,
+            "buff2": 0
+        }
+        self.buff_cooldowns_max = {
+            "Warrior": {"buff1": 1200, "buff2": 0}, # 20s, Berserk is auto
+            "Mage": {"buff1": 900, "buff2": 900}, # 15s
+            "Archer": {"buff1": 600, "buff2": 300}, # 10s, 5s
+            "Rogue": {"buff1": 480, "buff2": 0}, # 8s, Backstab is passive
+            "Reaver": {"buff1": 1200, "buff2": 0} # 20s, Crimson is auto
+        }
     
     def update(self, platforms, walls, temp_walls, fire_zones, mouse_pos, camera_x, camera_y, game_instance=None):
         keys = pygame.key.get_pressed()
         
         self.animation_timer += 1
+        
+        # Passive and Buff logic
+        if self.character_class == "Mage":
+            # Mana Affinity: 5% mana regen/s
+            regen_amount = (self.max_mana * 0.05) / 60
+            self.mana = min(self.max_mana, self.mana + regen_amount)
+        elif self.character_class == "Rogue":
+            # Agility: +10% move speed
+            self.move_speed_bonus = 1.1
+        elif self.character_class == "Reaver":
+            # Survivor's Instinct: Below 20 HP, +25% regen for 4s (simulated as constant while low)
+            if self.hp < 20:
+                self.hp = min(self.max_hp, self.hp + (25 / 60 / 4)) # 25 HP over 4s
+            # Crimson Aura: 5 HP/s regen while enemies nearby
+            if self.buffs["crimson_aura"] > 0:
+                self.hp = min(self.max_hp, self.hp + 5 / 60)
+                self.buffs["crimson_aura"] -= 1
+
+        # Rogue consecutive attacks
+        if self.consecutive_attack_timer > 0:
+            self.consecutive_attack_timer -= 1
+        else:
+            self.consecutive_attacks = 0
+
+        # Decrement other buff timers
+        for buff in self.buffs:
+            if isinstance(self.buffs[buff], int) and self.buffs[buff] > 0:
+                if buff != "crimson_aura": # Already handled above
+                    self.buffs[buff] -= 1
+        
+        # Decrement cooldowns
+        if self.buff_cooldowns["buff1"] > 0:
+            self.buff_cooldowns["buff1"] -= 1
+        if self.buff_cooldowns["buff2"] > 0:
+            self.buff_cooldowns["buff2"] -= 1
         
         if self.dash_cooldown > 0:
             self.dash_cooldown -= 1
@@ -479,7 +699,10 @@ class Player:
             self.attack_cooldown -= 1
         
         if self.charging:
-            self.charge_percent = min(self.charge_percent + self.charge_rate, self.max_charge)
+            charge_speed = self.charge_rate
+            if self.buffs["arcane_surge"] > 0:
+                charge_speed *= 1.2
+            self.charge_percent = min(self.charge_percent + charge_speed, self.max_charge)
             world_mouse_x = mouse_pos[0] + camera_x
             world_mouse_y = mouse_pos[1] + camera_y
             dx = world_mouse_x - (self.x + self.width // 2)
@@ -508,7 +731,7 @@ class Player:
             self.dash_trail = [t for t in self.dash_trail if t['alpha'] > 0]
             
             self.vel_x = 0
-            speed = self.speed
+            speed = self.speed * self.external_slow * self.move_speed_bonus
             
             # Sniper cannot move while aiming
             if self.weapon_type == "sniper" and self.charging:
@@ -518,12 +741,15 @@ class Player:
             elif self.charging:
                 speed *= 0.25 if self.charge_percent >= self.max_charge else 0.5
             
+            # ZQSD controls (Q=left, D=right, S=fast fall)
             if keys[pygame.K_q]:
                 self.vel_x = -speed
                 self.facing_right = False
             if keys[pygame.K_d]:
                 self.vel_x = speed
                 self.facing_right = True
+            if keys[pygame.K_s]:
+                self.vel_y += self.gravity * 0.5  # Fast fall assistance
             
             if self.on_wall and self.vel_y > 0:
                 self.vel_y += self.gravity * 0.3
@@ -542,22 +768,14 @@ class Player:
         self.check_collision(platforms, walls, temp_walls, 'x')
         self.y += self.vel_y
         
-        # Only check collision with platforms if they're visible
+        # Only check collision with platforms if they're visible, but floor always solid
         if game_instance is not None and hasattr(game_instance, 'platforms_visible'):
             if game_instance.platforms_visible:
                 self.check_collision(platforms, walls, temp_walls, 'y')
             else:
-                # No platform collision when invisible - only gravity
-                self.on_ground = False
-                self.on_wall = False
-                # Still check wall collisions
-                for wall in walls + [w['rect'] for w in temp_walls]:
-                    player_rect = pygame.Rect(self.x, self.y, self.width, self.height)
-                    if player_rect.colliderect(wall) and self.vel_y > 0:
-                        self.y = wall.top - self.height
-                        self.vel_y = 0
-                        self.on_ground = True
-                        self.jumps_left = 2
+                # Only check collision with ground platform when others invisible
+                platforms_for_y = [platforms[0]] if platforms else []
+                self.check_collision(platforms_for_y, walls, temp_walls, 'y')
         else:
             self.check_collision(platforms, walls, temp_walls, 'y')
         
@@ -576,11 +794,13 @@ class Player:
                 if not self.dashing:
                     self.burn_damage_timer += 1
                     if self.burn_damage_timer >= 30:
-                        self.hp -= 2
+                        self.take_damage(2, "fire")
                         self.burn_damage_timer = 0
         
         if not self.fire_slow:
             self.burn_damage_timer = 0
+            
+        self.external_slow = 1.0
     
     def check_collision(self, platforms, walls, temp_walls, axis):
         player_rect = pygame.Rect(self.x, self.y, self.width, self.height)
@@ -629,6 +849,141 @@ class Player:
                         self.on_wall, self.wall_side, self.jumps_left = True, -1, 1
                     self.vel_x = 0
     
+    def take_damage(self, amount, damage_type="normal", source=None):
+        if self.invulnerable or self.buffs["evasive_roll"] > 0:
+            return 0
+
+        final_damage = amount
+
+        # Shield Stance (Warrior)
+        if self.buffs["shield_stance"] > 0:
+            final_damage *= 0.85
+
+        # Elemental Shield (Mage)
+        if self.buffs["elemental_shield"] > 0 and damage_type == "magic":
+            final_damage *= 0.75
+
+        # Parry logic
+        if self.parrying:
+            final_damage //= 2
+
+            # Warrior Parry effects
+            if self.character_class == "Warrior":
+                self.buffs["berserk"] = 300 # 5s
+                if source and hasattr(source, "take_damage"):
+                    source.take_damage(amount * 0.2) # Counter Strike
+
+        self.hp -= final_damage
+
+        # Quest tracking for Rogue: laser damage
+        if damage_type == "magic":
+            self.laser_damage_taken = True
+
+        return final_damage
+
+    def activate_buff(self, index):
+        """index is 1 or 2"""
+        buff_key = f"buff{index}"
+        if self.buff_cooldowns[buff_key] > 0:
+            return False
+            
+        activated = False
+        if self.character_class == "Warrior":
+            if index == 1:
+                self.buffs["shield_stance"] = 480 # 8s
+                activated = True
+        elif self.character_class == "Mage":
+            if index == 1:
+                self.buffs["arcane_surge"] = 360 # 6s
+                activated = True
+            elif index == 2:
+                self.buffs["elemental_shield"] = 300 # 5s
+                activated = True
+        elif self.character_class == "Archer":
+            if index == 1:
+                self.buffs["focus_shot"] = True
+                activated = True
+            elif index == 2:
+                self.buffs["evasive_roll"] = 48 # 0.8s
+                activated = True
+        elif self.character_class == "Rogue":
+            if index == 1:
+                self.buffs["shadow_dash"] = 60 # 1s
+                activated = True
+        elif self.character_class == "Reaver":
+            if index == 1:
+                self.buffs["siphon_strike"] = 300 # 5s
+                activated = True
+                
+        if activated:
+            self.buff_cooldowns[buff_key] = self.buff_cooldowns_max[self.character_class][buff_key]
+            return True
+        return False
+
+    def calculate_damage(self, base_amount, attack_type="melee", target=None):
+        final_damage = base_amount
+
+        # Warrior Berserk
+        if self.buffs["berserk"] > 0 and attack_type == "melee":
+            final_damage *= 1.2
+
+        # Mage Spell Mastery
+        if self.character_class == "Mage" and attack_type == "magic":
+            final_damage *= 1.15
+
+        # Archer Critical Eye and Focus Shot
+        crit_chance = self.crit_chance
+        if self.character_class == "Archer":
+            crit_chance += 0.1
+
+        if random.random() < crit_chance:
+            final_damage *= 1.5
+
+        if self.buffs["focus_shot"]:
+            final_damage *= 1.4
+            self.buffs["focus_shot"] = False # Consumed
+
+        # Rogue Backstab and Critical Timing
+        if self.character_class == "Rogue":
+            if target and hasattr(target, "facing_right"):
+                # If player and target facing same way, it's from behind
+                if self.facing_right == target.facing_right:
+                    final_damage *= 1.25
+
+            # Critical Timing: +15% damage on consecutive attacks (2s)
+            if self.consecutive_attacks > 0:
+                final_damage *= 1.15
+
+            self.consecutive_attacks += 1
+            self.consecutive_attack_timer = 120 # 2s
+
+        return final_damage
+
+    def on_deal_damage(self, amount):
+        heal_amount = 0
+        if self.character_class == "Reaver":
+            # Life Stealer: +5% HP recovered per attack
+            heal_amount += amount * 0.05
+            # Siphon Strike: Heal 25% damage dealt for 5s
+            if self.buffs["siphon_strike"] > 0:
+                heal_amount += amount * 0.25
+
+        if heal_amount > 0:
+            self.hp = min(self.max_hp, self.hp + heal_amount)
+
+        # Quest progress tracking
+        if self.game:
+            # Warrior: cumulative damage to boss
+            self.quest_progress['warrior_damage'] += amount
+
+            # Archer: range damage to boss/enemies
+            if self.weapon_type in ["crossbow", "sniper"]:
+                self.quest_progress['archer_range_damage'] += amount
+
+            # Reaver: damage dealt while under 50% HP
+            if self.hp < self.max_hp * 0.5:
+                self.quest_progress['reaver_low_hp_damage'] += amount
+
     def jump(self):
         if self.on_ground or self.jumps_left > 0:
             if self.on_wall:
@@ -650,6 +1005,9 @@ class Player:
                 self.dash_direction = -1
             elif keys[pygame.K_d]:
                 self.dash_direction = 1
+            else:
+                # Default to facing direction
+                self.dash_direction = 1 if self.facing_right else -1
     
     def basic_attack(self):
         if self.attack_cooldown == 0:
@@ -678,6 +1036,10 @@ class Player:
         
         damage = min_dmg + (charge - 25) * (max_dmg - min_dmg) / 175
         damage = max(min_dmg, min(max_dmg, damage))
+        
+        # Apply class multipliers
+        attack_type = "magic" if self.character_class == "Mage" else "ranged"
+        damage = self.calculate_damage(damage, attack_type)
         
         return {'damage': damage, 'angle': self.aim_angle, 'charge': charge}
     
@@ -787,6 +1149,27 @@ class Player:
             cooldown_width = int((self.dash_cooldown / self.dash_cooldown_max) * bar_width)
             cooldown_color = ORANGE if self.dash_cooldown < 10 else (200, 100, 0)
             pygame.draw.rect(screen, cooldown_color, (x - 10, y - 30, cooldown_width, 4))
+            
+        # Mana bar for Mage
+        if self.character_class == "Mage":
+            mana_width = int((self.mana / self.max_mana) * bar_width)
+            pygame.draw.rect(screen, BLUE, (x - 10, y - 35, mana_width, 4))
+
+        # Buff cooldowns
+        curr_y = y - 45
+        for i in [1, 2]:
+            buff_key = f"buff{i}"
+            if self.character_class in self.buff_cooldowns_max:
+                cooldown = self.buff_cooldowns[buff_key]
+                max_cooldown = self.buff_cooldowns_max[self.character_class][buff_key]
+                if max_cooldown > 0:
+                    pygame.draw.rect(screen, DARK_GRAY, (x - 10, curr_y, bar_width, 3))
+                    if cooldown > 0:
+                        cd_width = int((cooldown / max_cooldown) * bar_width)
+                        pygame.draw.rect(screen, YELLOW, (x - 10, curr_y, cd_width, 3))
+                    else:
+                        pygame.draw.rect(screen, WHITE, (x - 10, curr_y, bar_width, 3))
+                    curr_y -= 5
 
 class Boss:
     def __init__(self):
@@ -825,7 +1208,7 @@ class Boss:
         self.visual_x = self.x
         self.visual_y = self.y
     
-    def update(self):
+    def update(self, game=None):
         if self.fireball_cooldown > 0:
             self.fireball_cooldown -= 1
         if self.laser_cooldown > 0:
@@ -847,8 +1230,12 @@ class Boss:
                 self.phase2_transition_timer = 0
             return  # Don't move during transition
         
-        # Check for Phase 2 entry
-        if self.hp <= self.max_hp // 2 and self.phase == 1:
+        # Check for Phase 2 entry - Blocked by minibosses
+        can_enter_phase2 = True
+        if game and hasattr(game, 'miniboss_phase_completed'):
+            can_enter_phase2 = game.miniboss_phase_completed
+            
+        if self.hp <= self.max_hp // 2 and self.phase == 1 and can_enter_phase2:
             self.phase = 2
             self.phase2_transition_active = True
             self.phase2_transition_timer = 0
@@ -992,6 +1379,533 @@ class HealingOrb:
         pygame.draw.circle(screen, (0, 255, 100), (x, y), current_radius + 3)
         pygame.draw.circle(screen, GREEN, (x, y), current_radius)
 
+# MiniBoss class
+class MiniBoss:
+    def __init__(self, side):
+        self.side = side
+        self.width, self.height = 80, 100
+        # Positioned on the left/right pylons (platforms at 300 and 1800)
+        self.x = 410 if side == "left" else 1910
+        self.y = MAP_HEIGHT - 300
+        self.max_hp, self.hp = 100, 100
+        self.flash_timer = 0
+        
+        self.energy_link_cooldown = 0
+        self.energy_link_cooldown_max = 240
+        self.overload_cooldown = 0
+        self.overload_cooldown_max = 300
+        self.summon_cooldown = 0
+        self.summon_cooldown_max = 360
+        
+        # Initialize all cooldowns for both sides (they may be swapped during gameplay)
+        self.orb_rain_cooldown = 0
+        self.orb_rain_cooldown_max = 180
+        self.confinement_cooldown = 0
+        self.confinement_cooldown_max = 420
+        self.gravity_mark_cooldown = 0
+        self.gravity_mark_cooldown_max = 480
+        self.pierce_shot_cooldown = 0
+        self.pierce_shot_cooldown_max = 150
+        self.laser_lock_cooldown = 0
+        self.laser_lock_cooldown_max = 360
+        self.lightning_cooldown = 0
+        self.lightning_cooldown_max = 300
+        
+        self.overload_charge = 0
+        self.overload_active = False
+        
+        if side == "left":
+            self.laser_locking = False
+            self.laser_lock_timer = 0
+        else:
+            self.laser_locking = False
+            self.laser_lock_timer = 0
+        
+        self.enrage_level = 0
+        self.attack_speed_multiplier = 1.0
+        self.post_switch_boost = False
+        self.post_switch_boost_timer = 0
+        
+    def update(self, other_miniboss):
+        if self.flash_timer > 0:
+            self.flash_timer -= 1
+        
+        if self.post_switch_boost:
+            self.post_switch_boost_timer -= 1
+            if self.post_switch_boost_timer <= 0:
+                self.post_switch_boost = False
+                self.attack_speed_multiplier = 1.0
+        
+        cooldown_mult = self.attack_speed_multiplier * (1.0 - self.enrage_level * 0.15)
+        
+        if self.energy_link_cooldown > 0:
+            self.energy_link_cooldown -= cooldown_mult
+        if self.overload_cooldown > 0:
+            self.overload_cooldown -= cooldown_mult
+        if self.summon_cooldown > 0:
+            self.summon_cooldown -= cooldown_mult
+        
+        if self.side == "left":
+            if self.orb_rain_cooldown > 0:
+                self.orb_rain_cooldown -= cooldown_mult
+            if self.confinement_cooldown > 0:
+                self.confinement_cooldown -= cooldown_mult
+            if self.gravity_mark_cooldown > 0:
+                self.gravity_mark_cooldown -= cooldown_mult
+        else:
+            if self.pierce_shot_cooldown > 0:
+                self.pierce_shot_cooldown -= cooldown_mult
+            if self.laser_lock_cooldown > 0:
+                self.laser_lock_cooldown -= cooldown_mult
+            if self.lightning_cooldown > 0:
+                self.lightning_cooldown -= cooldown_mult
+            if self.laser_locking:
+                self.laser_lock_timer -= 1
+        
+        if self.overload_active:
+            self.overload_charge += 1
+    
+    def take_damage(self, damage):
+        self.hp -= damage
+        self.flash_timer = 5
+        
+        hp_ratio = self.hp / self.max_hp
+        if hp_ratio < 0.7 and self.enrage_level < 1:
+            self.enrage_level = 1
+        elif hp_ratio < 0.4 and self.enrage_level < 2:
+            self.enrage_level = 2
+    
+    def switch_position(self, other_x):
+        self.x = other_x
+        self.side = "left" if self.side == "right" else "right"
+        self.post_switch_boost = True
+        self.post_switch_boost_timer = 180
+        self.attack_speed_multiplier = 1.5
+    
+    def draw(self, screen, camera_x, camera_y):
+        x, y = self.x - camera_x, self.y - camera_y
+        
+        color = WHITE if self.flash_timer > 0 else (BLUE if self.side == "left" else ORANGE)
+        
+        if self.overload_active:
+            glow_radius = int(60 + self.overload_charge * 0.3)
+            for i in range(3):
+                alpha_surf = pygame.Surface((glow_radius * 2, glow_radius * 2), pygame.SRCALPHA)
+                alpha = int(80 - i * 25)
+                pygame.draw.circle(alpha_surf, (*YELLOW, alpha), (glow_radius, glow_radius), glow_radius - i * 10)
+                screen.blit(alpha_surf, (x + self.width // 2 - glow_radius, y + self.height // 2 - glow_radius))
+        
+        pygame.draw.rect(screen, color, (x, y, self.width, self.height))
+        
+        bar_width = 100
+        pygame.draw.rect(screen, RED, (x - 10, y - 20, bar_width, 8))
+        health_width = int((self.hp / self.max_hp) * bar_width)
+        pygame.draw.rect(screen, GREEN, (x - 10, y - 20, health_width, 8))
+        
+        if self.enrage_level > 0:
+            enrage_color = ORANGE if self.enrage_level == 1 else RED
+            pygame.draw.rect(screen, enrage_color, (x, y, self.width, self.height), 3)
+
+# MiniBossManager class
+class MiniBossManager:
+    def __init__(self):
+        self.left_boss = MiniBoss("left")
+        self.right_boss = MiniBoss("right")
+        self.switch_timer = 1800
+        self.switch_cooldown = 1800
+        self.active = False
+        self.energy_link_active = False
+        self.energy_link_damage_timer = 0
+        self.persistent_orbs = []
+        self.confinement_zones = []
+        self.gravity_marks = []
+        self.lightning_zones = []
+        self.pierce_shots = []
+        self.switch_explosions = []
+        
+    def update(self, player, projectiles, minions):
+        if not self.active or not self.left_boss or not self.right_boss:
+            return
+        
+        if self.left_boss.hp <= 0:
+            self.left_boss = None
+        if self.right_boss.hp <= 0:
+            self.right_boss = None
+        
+        if not self.left_boss or not self.right_boss:
+            self.active = False
+            return
+        
+        self.left_boss.update(self.right_boss)
+        self.right_boss.update(self.left_boss)
+        
+        self.switch_timer -= 1
+        if self.switch_timer <= 0:
+            self.execute_switch(projectiles)
+            base_cooldown = 1800 - self.left_boss.enrage_level * 600
+            self.switch_cooldown = max(1200, base_cooldown)
+            self.switch_timer = self.switch_cooldown
+        
+        self.update_attacks(player, projectiles, minions)
+        self.update_persistent_effects(player)
+    
+    def execute_switch(self, projectiles):
+        old_left_x = self.left_boss.x
+        old_right_x = self.right_boss.x
+        
+        self.left_boss.switch_position(old_right_x)
+        self.right_boss.switch_position(old_left_x)
+        
+        # Reset pylon overload after swap
+        self.left_boss.overload_active = False
+        self.left_boss.overload_charge = 0
+        self.right_boss.overload_active = False
+        self.right_boss.overload_charge = 0
+        
+        for x_pos in [old_left_x, old_right_x]:
+            self.switch_explosions.append({
+                'x': x_pos,
+                'y': self.left_boss.y,
+                'radius': 0,
+                'max_radius': 150,
+                'timer': 30,
+                'damage_dealt': False
+            })
+        
+        # Exchange one signature attack between the two mini-bosses
+        # Signature 1: Orb Rain vs Pierce Shot
+        temp_rain = self.left_boss.orb_rain_cooldown
+        self.left_boss.orb_rain_cooldown = self.right_boss.pierce_shot_cooldown
+        self.right_boss.pierce_shot_cooldown = temp_rain
+        
+        # We also need to swap the logic assignment flag if we use one
+        # For now, we'll swap who is responsible for which attack in update_attacks
+        self.swapped_signature = not getattr(self, 'swapped_signature', False)
+    
+    def update_attacks(self, player, projectiles, minions):
+        # Persistent energy link dealing continuous damage
+        if self.left_boss and self.right_boss:
+            self.energy_link_active = True
+            self.energy_link_damage_timer += 1
+            if self.energy_link_damage_timer >= 60:
+                self.energy_link_damage_timer = 0
+        else:
+            self.energy_link_active = False
+        
+        if self.left_boss.overload_cooldown <= 0:
+            self.left_boss.overload_active = True
+            self.left_boss.overload_charge = 0
+            self.left_boss.overload_cooldown = self.left_boss.overload_cooldown_max
+        
+        if self.right_boss.overload_cooldown <= 0:
+            self.right_boss.overload_active = True
+            self.right_boss.overload_charge = 0
+            self.right_boss.overload_cooldown = self.right_boss.overload_cooldown_max
+        
+        if self.left_boss.summon_cooldown <= 0 and self.right_boss.summon_cooldown <= 0:
+            count = 2 + self.left_boss.enrage_level
+            for _ in range(count):
+                spawn_x = random.choice([self.left_boss.x, self.right_boss.x]) + random.randint(-50, 50)
+                minions.append(Minion(spawn_x, self.left_boss.y + 100))
+            self.left_boss.summon_cooldown = self.left_boss.summon_cooldown_max
+            self.right_boss.summon_cooldown = self.right_boss.summon_cooldown_max
+        
+        # Determine who handles which signature attack
+        boss_a = self.right_boss if getattr(self, 'swapped_signature', False) else self.left_boss
+        boss_b = self.left_boss if getattr(self, 'swapped_signature', False) else self.right_boss
+        
+        if boss_a.orb_rain_cooldown <= 0:
+            count = 5 + boss_a.enrage_level * 3
+            for _ in range(count):
+                orb_x = random.randint(200, MAP_WIDTH - 200)
+                self.persistent_orbs.append({
+                    'x': orb_x,
+                    'y': 0,
+                    'vel_y': random.uniform(3, 6),
+                    'radius': 12,
+                    'lifetime': 600
+                })
+            boss_a.orb_rain_cooldown = boss_a.orb_rain_cooldown_max
+        
+        if self.left_boss.confinement_cooldown <= 0:
+            self.confinement_zones.append({
+                'x': player.x,
+                'y': player.y,
+                'radius': 200,
+                'timer': 180,
+                'strength': 0.7
+            })
+            self.left_boss.confinement_cooldown = self.left_boss.confinement_cooldown_max
+        
+        if self.left_boss.gravity_mark_cooldown <= 0:
+            self.gravity_marks.append({
+                'x': player.x,
+                'y': player.y,
+                'delay': 120,
+                'active': False,
+                'pull_strength': 8
+            })
+            self.left_boss.gravity_mark_cooldown = self.left_boss.gravity_mark_cooldown_max
+        
+        if boss_b.pierce_shot_cooldown <= 0:
+            count = 3 + boss_b.enrage_level
+            for _ in range(count):
+                dx = player.x - boss_b.x
+                dy = player.y - boss_b.y
+                dist = math.sqrt(dx**2 + dy**2)
+                if dist > 0:
+                    vel_x = (dx / dist) * 12
+                    vel_y = (dy / dist) * 12
+                    self.pierce_shots.append({
+                        'x': boss_b.x + boss_b.width // 2,
+                        'y': boss_b.y + boss_b.height // 2,
+                        'vel_x': vel_x,
+                        'vel_y': vel_y,
+                        'damage': 15,
+                        'pierced': 0
+                    })
+            boss_b.pierce_shot_cooldown = boss_b.pierce_shot_cooldown_max
+        
+        if self.right_boss.laser_lock_cooldown <= 0 and not self.right_boss.laser_locking:
+            self.right_boss.laser_locking = True
+            self.right_boss.laser_lock_timer = 120
+            self.right_boss.laser_lock_cooldown = self.right_boss.laser_lock_cooldown_max
+        
+        if self.right_boss.laser_locking and self.right_boss.laser_lock_timer <= 0:
+            dx = player.x - self.right_boss.x
+            dy = player.y - self.right_boss.y
+            angle = math.atan2(dy, dx)
+            speed = 20
+            projectiles.append(Projectile(
+                self.right_boss.x + self.right_boss.width // 2,
+                self.right_boss.y + self.right_boss.height // 2,
+                math.cos(angle) * speed,
+                math.sin(angle) * speed,
+                40,
+                'laser_blast'
+            ))
+            self.right_boss.laser_locking = False
+        
+        if self.right_boss.lightning_cooldown <= 0:
+            self.lightning_zones.append({
+                'x': player.x,
+                'y': player.y,
+                'radius': 80,
+                'timer': 300,
+                'damage_interval': 30,
+                'damage_timer': 0
+            })
+            self.right_boss.lightning_cooldown = self.right_boss.lightning_cooldown_max
+    
+    def update_persistent_effects(self, player):
+        for orb in self.persistent_orbs[:]:
+            orb['y'] += orb['vel_y']
+            orb['lifetime'] -= 1
+            if orb['lifetime'] <= 0 or orb['y'] > MAP_HEIGHT:
+                self.persistent_orbs.remove(orb)
+        
+        for zone in self.confinement_zones[:]:
+            zone['timer'] -= 1
+            if zone['timer'] <= 0:
+                self.confinement_zones.remove(zone)
+            else:
+                dx = player.x - zone['x']
+                dy = player.y - zone['y']
+                dist = math.sqrt(dx**2 + dy**2)
+                if dist < zone['radius']:
+                    player.external_slow = min(getattr(player, 'external_slow', 1.0), zone['strength'])
+        
+        for mark in self.gravity_marks[:]:
+            if not mark['active']:
+                mark['delay'] -= 1
+                if mark['delay'] <= 0:
+                    mark['active'] = True
+            else:
+                dx = mark['x'] - player.x
+                dy = mark['y'] - player.y
+                dist = math.sqrt(dx**2 + dy**2)
+                if dist > 0 and dist < 400:
+                    player.vel_x += (dx / dist) * mark['pull_strength'] * 0.1
+                    player.vel_y += (dy / dist) * mark['pull_strength'] * 0.1
+                mark['pull_strength'] *= 0.98
+                if mark['pull_strength'] < 1:
+                    self.gravity_marks.remove(mark)
+        
+        for zone in self.lightning_zones[:]:
+            zone['timer'] -= 1
+            zone['damage_timer'] += 1
+            if zone['timer'] <= 0:
+                self.lightning_zones.remove(zone)
+        
+        for shot in self.pierce_shots[:]:
+            shot['x'] += shot['vel_x']
+            shot['y'] += shot['vel_y']
+            if shot['x'] < 0 or shot['x'] > MAP_WIDTH or shot['y'] < 0 or shot['y'] > MAP_HEIGHT:
+                self.pierce_shots.remove(shot)
+            elif shot['pierced'] >= 3:
+                self.pierce_shots.remove(shot)
+        
+        for explosion in self.switch_explosions[:]:
+            explosion['timer'] -= 1
+            explosion['radius'] = (1 - explosion['timer'] / 30) * explosion['max_radius']
+            if explosion['timer'] <= 0:
+                self.switch_explosions.remove(explosion)
+    
+    def check_damage_to_player(self, player):
+        if player.invulnerable or player.dashing:
+            return
+        
+        player_rect = pygame.Rect(player.x, player.y, player.width, player.height)
+        
+        if self.energy_link_active and self.energy_link_damage_timer == 0:
+            # Check if player intersects the line between bosses
+            x1, y1 = self.left_boss.x + self.left_boss.width // 2, self.left_boss.y + self.left_boss.height // 2
+            x2, y2 = self.right_boss.x + self.right_boss.width // 2, self.right_boss.y + self.right_boss.height // 2
+            px, py = player.x + player.width // 2, player.y + player.height // 2
+            
+            # Distance from point to line segment
+            line_len = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+            if line_len > 0:
+                t = max(0, min(1, ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / (line_len**2)))
+                proj_x = x1 + t * (x2 - x1)
+                proj_y = y1 + t * (y2 - y1)
+                dist = math.sqrt((px - proj_x)**2 + (py - proj_y)**2)
+                
+                if dist < 40:  # Within link thickness
+                    player.take_damage(6, "magic", self)
+        
+        for boss in [self.left_boss, self.right_boss]:
+            if boss and boss.overload_active:
+                dx = player.x - boss.x
+                dy = player.y - boss.y
+                dist = math.sqrt(dx**2 + dy**2)
+                damage_radius = 60 + boss.overload_charge * 0.3
+                if dist < damage_radius:
+                    damage = int((boss.overload_charge / 100) * 15)
+                    if damage > 0:
+                        player.take_damage(damage, "magic", boss)
+                        boss.overload_active = False
+                        boss.overload_charge = 0
+        
+        for orb in self.persistent_orbs[:]:
+            orb_rect = pygame.Rect(orb['x'] - orb['radius'], orb['y'] - orb['radius'], orb['radius'] * 2, orb['radius'] * 2)
+            if player_rect.colliderect(orb_rect):
+                player.take_damage(8, "magic", self)
+                self.persistent_orbs.remove(orb)
+        
+        for zone in self.lightning_zones:
+            dx = player.x - zone['x']
+            dy = player.y - zone['y']
+            dist = math.sqrt(dx**2 + dy**2)
+            if dist < zone['radius'] and zone['damage_timer'] >= zone['damage_interval']:
+                player.take_damage(10, "magic", self)
+                zone['damage_timer'] = 0
+        
+        for shot in self.pierce_shots[:]:
+            shot_rect = pygame.Rect(shot['x'] - 8, shot['y'] - 8, 16, 16)
+            if player_rect.colliderect(shot_rect):
+                player.take_damage(shot['damage'], "normal", self)
+                shot['pierced'] += 1
+        
+        for explosion in self.switch_explosions:
+            if not explosion['damage_dealt'] and explosion['timer'] <= 20:
+                dx = player.x - explosion['x']
+                dy = player.y - explosion['y']
+                dist = math.sqrt(dx**2 + dy**2)
+                if dist < explosion['radius']:
+                    player.take_damage(30, "normal", self)
+                    explosion['damage_dealt'] = True
+    
+    def draw(self, screen, camera_x, camera_y):
+        if not self.active:
+            return
+        
+        if self.left_boss:
+            self.left_boss.draw(screen, camera_x, camera_y)
+        if self.right_boss:
+            self.right_boss.draw(screen, camera_x, camera_y)
+        
+        if self.energy_link_active and self.left_boss and self.right_boss:
+            lx = self.left_boss.x + self.left_boss.width // 2 - camera_x
+            ly = self.left_boss.y + self.left_boss.height // 2 - camera_y
+            rx = self.right_boss.x + self.right_boss.width // 2 - camera_x
+            ry = self.right_boss.y + self.right_boss.height // 2 - camera_y
+            
+            for i in range(5):
+                alpha = 50 + i * 30
+                color = (*PURPLE, alpha)
+                thickness = 8 - i
+                link_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+                pygame.draw.line(link_surf, color, (lx, ly), (rx, ry), thickness)
+                screen.blit(link_surf, (0, 0))
+        
+        for orb in self.persistent_orbs:
+            orb_x = orb['x'] - camera_x
+            orb_y = orb['y'] - camera_y
+            pygame.draw.circle(screen, BLUE, (int(orb_x), int(orb_y)), orb['radius'])
+            pygame.draw.circle(screen, WHITE, (int(orb_x), int(orb_y)), orb['radius'] - 3)
+        
+        for zone in self.confinement_zones:
+            zone_x = zone['x'] - camera_x
+            zone_y = zone['y'] - camera_y
+            surf = pygame.Surface((zone['radius'] * 2, zone['radius'] * 2), pygame.SRCALPHA)
+            pygame.draw.circle(surf, (*BLUE, 80), (zone['radius'], zone['radius']), zone['radius'])
+            screen.blit(surf, (zone_x - zone['radius'], zone_y - zone['radius']))
+            pygame.draw.circle(screen, BLUE, (int(zone_x), int(zone_y)), zone['radius'], 2)
+        
+        for mark in self.gravity_marks:
+            mark_x = mark['x'] - camera_x
+            mark_y = mark['y'] - camera_y
+            if mark['active']:
+                pulse = int(abs(math.sin(pygame.time.get_ticks() * 0.01)) * 20)
+                radius = 30 + pulse
+                pygame.draw.circle(screen, PURPLE, (int(mark_x), int(mark_y)), radius, 3)
+                pygame.draw.circle(screen, (*PURPLE, 50), (int(mark_x), int(mark_y)), radius - 5, 2)
+            else:
+                pygame.draw.circle(screen, (*PURPLE, 100), (int(mark_x), int(mark_y)), 20, 2)
+        
+        for zone in self.lightning_zones:
+            zone_x = zone['x'] - camera_x
+            zone_y = zone['y'] - camera_y
+            surf = pygame.Surface((zone['radius'] * 2, zone['radius'] * 2), pygame.SRCALPHA)
+            pygame.draw.circle(surf, (*YELLOW, 60), (zone['radius'], zone['radius']), zone['radius'])
+            screen.blit(surf, (zone_x - zone['radius'], zone_y - zone['radius']))
+            
+            for _ in range(3):
+                offset_x = random.randint(-zone['radius'], zone['radius'])
+                offset_y = random.randint(-zone['radius'], zone['radius'])
+                pygame.draw.line(screen, YELLOW, (int(zone_x), int(zone_y)), (int(zone_x + offset_x), int(zone_y + offset_y)), 2)
+        
+        for shot in self.pierce_shots:
+            shot_x = shot['x'] - camera_x
+            shot_y = shot['y'] - camera_y
+            pygame.draw.circle(screen, ORANGE, (int(shot_x), int(shot_y)), 8)
+            
+            angle = math.atan2(shot['vel_y'], shot['vel_x'])
+            tail_x = shot_x - math.cos(angle) * 20
+            tail_y = shot_y - math.sin(angle) * 20
+            pygame.draw.line(screen, ORANGE, (int(shot_x), int(shot_y)), (int(tail_x), int(tail_y)), 3)
+        
+        for explosion in self.switch_explosions:
+            exp_x = explosion['x'] - camera_x
+            exp_y = explosion['y'] - camera_y
+            surf = pygame.Surface((explosion['radius'] * 2, explosion['radius'] * 2), pygame.SRCALPHA)
+            alpha = int((explosion['timer'] / 30) * 150)
+            pygame.draw.circle(surf, (*RED, alpha), (int(explosion['radius']), int(explosion['radius'])), int(explosion['radius']))
+            screen.blit(surf, (exp_x - explosion['radius'], exp_y - explosion['radius']))
+            pygame.draw.circle(screen, ORANGE, (int(exp_x), int(exp_y)), int(explosion['radius']), 3)
+        
+        if self.right_boss and self.right_boss.laser_locking:
+            lock_x = self.right_boss.x + self.right_boss.width // 2 - camera_x
+            lock_y = self.right_boss.y + self.right_boss.height // 2 - camera_y
+            
+            for i in range(3):
+                radius = 40 + i * 15
+                alpha = int(150 - i * 40)
+                surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+                pygame.draw.circle(surf, (*RED, alpha), (radius, radius), radius, 3)
+                screen.blit(surf, (lock_x - radius, lock_y - radius))
+
 class Game:
     def __init__(self):
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -1022,10 +1936,58 @@ class Game:
         self.shop = Shop()
         self.save_manager = SaveManager()
         
+        self.miniboss_manager = MiniBossManager()
+        self.miniboss_phase_completed = False
+        self.selected_character = None
+
         # Meta progression data (persists between runs)
         self.currency = 0  # Loaded from meta save
         self.total_damage_dealt = 0  # Runtime only - NOT saved
-        
+        self.unlocked_classes = set()  # Loaded from meta save
+
+        # Quest definitions
+        self.quests = {
+            'warrior_damage': {
+                'name': 'Warrior\'s Fury',
+                'class': 'Warrior',
+                'description': 'Deal 100 damage to the boss',
+                'max_progress': 100,
+                'reward': 'Unlock Warrior class'
+            },
+            'mage_crystals': {
+                'name': 'Crystal Collector',
+                'class': 'Mage',
+                'description': 'Collect 5 crystals',
+                'max_progress': 5,
+                'reward': 'Unlock Mage class'
+            },
+            'archer_range_damage': {
+                'name': 'Marksman\'s Precision',
+                'class': 'Archer',
+                'description': 'Deal 100 ranged damage to enemies',
+                'max_progress': 100,
+                'reward': 'Unlock Archer class'
+            },
+            'rogue_laser_avoids': {
+                'name': 'Shadow Dancer',
+                'class': 'Rogue',
+                'description': 'Avoid 10 laser attacks',
+                'max_progress': 10,
+                'reward': 'Unlock Rogue class'
+            },
+            'reaver_low_hp_damage': {
+                'name': 'Survivor\'s Rage',
+                'class': 'Reaver',
+                'description': 'Deal 100 damage while under 50% HP',
+                'max_progress': 100,
+                'reward': 'Unlock Reaver class'
+            }
+        }
+
+        # Quest elements
+        self.crystals = []
+        self.laser_attack_timer = 0
+
         # Load meta progression on startup
         self.load_meta_progression()
         
@@ -1041,10 +2003,6 @@ class Game:
         self.godmode = False
         self.boss_invincible = False
         self.paused = False
-        self.total_damage_dealt = 0
-        self.platform_disappear_timer = 0
-        self.platforms_visible = True
-        self.platform_hazard_active = False
         self.camera_follow = True
         self.debug_mode = False
         self.admin_authenticated = False
@@ -1089,8 +2047,9 @@ class Game:
     def load_meta_progression(self):
         """Load ONLY meta progression - never runtime state"""
         meta_data = self.save_manager.load_meta_progression(self.shop.items)
-        if meta_data:
-            self.currency = meta_data['total_credits']
+        if meta_data and isinstance(meta_data, dict):
+            self.currency = meta_data.get('total_credits', 0)
+            self.unlocked_classes = unlocked_classes
             self.menu.show_notification(f"Meta progression loaded! Credits: {self.currency}")
         else:
             # No save exists - start fresh
@@ -1098,7 +2057,7 @@ class Game:
     
     def save_meta_progression(self):
         """Save ONLY meta progression - never runtime state"""
-        if self.save_manager.save_meta_progression(self.currency, self.shop.items):
+        if self.save_manager.save_meta_progression(self.currency, self.shop.items, self.unlocked_classes):
             self.menu.show_notification("Progress saved!")
             return True
         else:
@@ -1128,11 +2087,25 @@ class Game:
     def start_game(self):
         self.state = GameState.PLAYING
         
-        # Get equipped stats from shop
-        max_hp, base_damage, weapon_type = self.shop.get_equipped_stats()
+        # Get character stats
+        char_stats = self.menu.character_stats[self.selected_character]
+        base_hp = char_stats['base_hp']
+        hp_bonus = char_stats['hp_bonus']
         
-        self.player = Player(max_hp, base_damage, weapon_type)
+        # Get equipped stats from shop (additional bonuses)
+        shop_hp, base_damage, weapon_type = self.shop.get_equipped_stats()
+        
+        # Total HP = Base + Class Bonus + Shop Bonus
+        total_hp = base_hp + hp_bonus + shop_hp
+        
+        self.player = Player(total_hp, base_damage, weapon_type)
+        # Store class info in player for passives/buffs if needed
+        self.player.character_class = self.selected_character
+        self.player.game = self  # Reference to game for quest tracking
+        
         self.boss = Boss()
+        self.miniboss_manager = MiniBossManager()
+        self.miniboss_phase_completed = False
         self.projectiles = []
         self.minions = []
         self.fire_zones = []
@@ -1585,7 +2558,7 @@ class Game:
         # Slow down gameplay during boss Phase 2 transition
         if self.boss and self.boss.phase2_transition_active:
             # Update boss transition animation
-            self.boss.update()
+            self.boss.update(self)
             
             # Trigger platform rotation on transition start
             if self.boss.phase2_transition_timer == 1:
@@ -1602,8 +2575,27 @@ class Game:
             if self.godmode and self.player.hp < self.player.max_hp:
                 self.player.hp = self.player.max_hp
             
-            self.boss.update()
-            self.boss_ai()
+            miniboss_active = hasattr(self, 'miniboss_manager') and self.miniboss_manager.active
+            
+            if hasattr(self, 'miniboss_manager'):
+                if self.miniboss_manager.active:
+                    self.miniboss_manager.update(self.player, self.projectiles, self.minions)
+                    self.miniboss_manager.check_damage_to_player(self.player)
+                    
+                    if not self.miniboss_manager.active and not self.miniboss_phase_completed:
+                        self.miniboss_phase_completed = True
+                elif not self.miniboss_phase_completed and self.boss.hp <= self.boss.max_hp // 2:
+                    self.miniboss_manager.active = True
+                    miniboss_active = True
+                    # Reset boss position for Phase 2 when they return
+                    self.boss.x = MAP_WIDTH // 2
+                    self.boss.y = 100
+                    self.boss.visual_x = self.boss.x
+                    self.boss.visual_y = self.boss.y
+            
+            if not miniboss_active:
+                self.boss.update(self)
+                self.boss_ai()
             
             for proj in self.projectiles[:]:
                 proj.update()
@@ -1611,10 +2603,11 @@ class Game:
                 
                 if proj.type == 'charged_attack':
                     boss_rect = pygame.Rect(self.boss.x, self.boss.y, self.boss.width, self.boss.height)
-                    if proj_rect.colliderect(boss_rect):
+                    if proj_rect.colliderect(boss_rect) and not miniboss_active:
                         if not self.boss_invincible:
                             damage = int(proj.damage)
                             self.boss.take_damage(damage)
+                            self.player.on_deal_damage(damage)
                             self.total_damage_dealt += damage
                             
                             # Award currency: 2 credits per 10 damage
@@ -1625,14 +2618,35 @@ class Game:
                                 self.currency += new_credits
                         self.projectiles.remove(proj)
                         continue
+                    
+                    if hasattr(self, 'miniboss_manager') and self.miniboss_manager.active:
+                        for mboss in [self.miniboss_manager.left_boss, self.miniboss_manager.right_boss]:
+                            if mboss:
+                                mboss_rect = pygame.Rect(mboss.x, mboss.y, mboss.width, mboss.height)
+                                if proj_rect.colliderect(mboss_rect):
+                                    damage = int(proj.damage)
+                                    mboss.take_damage(damage)
+                                    self.player.on_deal_damage(damage)
+                                    self.total_damage_dealt += damage
+                                    
+                                    # Award currency: 2 credits per 10 damage
+                                    credits_earned = (self.total_damage_dealt // 10) * 2
+                                    previous_credits = ((self.total_damage_dealt - damage) // 10) * 2
+                                    new_credits = credits_earned - previous_credits
+                                    if new_credits > 0:
+                                        self.currency += new_credits
+                                    
+                                    self.projectiles.remove(proj)
+                                    break
+                    
                     if proj.x < 0 or proj.x > MAP_WIDTH or proj.y < 0 or proj.y > MAP_HEIGHT:
                         self.projectiles.remove(proj)
                         continue
                 
                 player_rect = pygame.Rect(self.player.x, self.player.y, self.player.width, self.player.height)
                 if proj_rect.colliderect(player_rect) and not self.player.invulnerable and proj.type != 'charged_attack' and not self.godmode:
-                    damage = proj.damage // 2 if self.player.parrying else proj.damage
-                    self.player.hp -= damage
+                    damage_type = "magic" if proj.type in ['fireball', 'laser'] else "normal"
+                    self.player.take_damage(proj.damage, damage_type, self.boss)
                     if proj in self.projectiles:
                         self.projectiles.remove(proj)
                     if proj.type == 'fireball':
@@ -1656,8 +2670,7 @@ class Game:
                 minion_rect = pygame.Rect(minion.x, minion.y, minion.width, minion.height)
                 player_rect = pygame.Rect(self.player.x, self.player.y, self.player.width, self.player.height)
                 if minion_rect.colliderect(player_rect) and not self.player.invulnerable and not self.godmode:
-                    damage = 5 // 2 if self.player.parrying else 5
-                    self.player.hp -= damage
+                    self.player.take_damage(5, "normal", minion)
                     self.minions.remove(minion)
             
             for fire in self.fire_zones[:]:
@@ -1672,8 +2685,7 @@ class Game:
                 elif laser['timer'] == laser['fire_frame']:
                     player_rect = pygame.Rect(self.player.x, self.player.y, self.player.width, self.player.height)
                     if laser['rect'].colliderect(player_rect) and not self.player.invulnerable and not self.godmode:
-                        damage = 30 // 2 if self.player.parrying else 30
-                        self.player.hp -= damage
+                        self.player.take_damage(30, "magic", self.boss)
             
             for wall in self.temp_walls[:]:
                 wall['timer'] -= 1
@@ -1708,13 +2720,67 @@ class Game:
                 if self.platform_disappear_timer <= 0:
                     # Toggle platform visibility
                     self.platforms_visible = not self.platforms_visible
-                    
                     if self.platforms_visible:
-                        # Platforms reappear - wait 20 seconds (1200 frames)
                         self.platform_disappear_timer = 1200
                     else:
-                        # Platforms disappear - wait 5 seconds (300 frames)
                         self.platform_disappear_timer = 300
+            
+            # Quest elements
+            # Crystal spawning for Mage quest
+            if random.randint(1, 1000) == 1:
+                crystal_x = random.randint(200, MAP_WIDTH - 200)
+                crystal_y = random.randint(300, MAP_HEIGHT - 300)
+                self.crystals.append({'x': crystal_x, 'y': crystal_y, 'radius': 15})
+
+            # Crystal collection
+            player_rect = pygame.Rect(self.player.x, self.player.y, self.player.width, self.player.height)
+            for crystal in self.crystals[:]:
+                crystal_rect = pygame.Rect(crystal['x'] - crystal['radius'], crystal['y'] - crystal['radius'], crystal['radius'] * 2, crystal['radius'] * 2)
+                if player_rect.colliderect(crystal_rect):
+                    self.player.quest_progress['mage_crystals'] += 1
+                    self.crystals.remove(crystal)
+
+            # Laser attack timer for Rogue quest
+            if self.boss and self.boss.laser_cooldown == 0:
+                self.laser_attack_timer = 120
+                self.player.laser_damage_taken = False
+
+            if self.laser_attack_timer > 0:
+                self.laser_attack_timer -= 1
+                if self.laser_attack_timer == 0 and not self.player.laser_damage_taken:
+                    self.player.consecutive_laser_avoids += 1
+                    self.player.quest_progress['rogue_laser_avoids'] = self.player.consecutive_laser_avoids
+                elif self.player.laser_damage_taken:
+                    self.player.consecutive_laser_avoids = 0
+                    self.player.quest_progress['rogue_laser_avoids'] = 0
+
+            # Check for class unlocks
+            if self.player.quest_progress['warrior_damage'] >= 100 and 'Warrior' not in self.unlocked_classes:
+                self.unlocked_classes.add('Warrior')
+                self.save_meta_progression()
+            if self.player.quest_progress['mage_crystals'] >= 5 and 'Mage' not in self.unlocked_classes:
+                self.unlocked_classes.add('Mage')
+                self.save_meta_progression()
+            if self.player.quest_progress['archer_range_damage'] >= 100 and 'Archer' not in self.unlocked_classes:
+                self.unlocked_classes.add('Archer')
+                self.save_meta_progression()
+            if self.player.quest_progress['rogue_laser_avoids'] >= 10 and 'Rogue' not in self.unlocked_classes:
+                self.unlocked_classes.add('Rogue')
+                self.save_meta_progression()
+            if self.player.quest_progress['reaver_low_hp_damage'] >= 100 and 'Reaver' not in self.unlocked_classes:
+                self.unlocked_classes.add('Reaver')
+                self.save_meta_progression()
+
+            # Reaver Crimson Aura check
+            if self.player.character_class == "Reaver":
+                dist_to_boss = math.hypot(self.player.x - self.boss.x, self.player.y - self.boss.y)
+                if dist_to_boss < 300:
+                    self.player.buffs["crimson_aura"] = 2
+                else:
+                    for minion in self.minions:
+                        if math.hypot(self.player.x - minion.x, self.player.y - minion.y) < 200:
+                            self.player.buffs["crimson_aura"] = 2
+                            break
             
             target_x = self.player.x - SCREEN_WIDTH // 2
             target_y = self.player.y - SCREEN_HEIGHT // 2
@@ -1757,6 +2823,11 @@ class Game:
                     elif self.state == GameState.SETTINGS:
                         self.state = GameState.MAIN_MENU
                         self.menu.selected = 0
+                    elif self.state == GameState.CHARACTER_SELECT:
+                        self.state = GameState.MAIN_MENU
+                        self.menu.selected = 0
+                    elif self.state == GameState.QUEST_MENU:
+                        self.state = GameState.PLAYING
                     elif self.admin_login_mode:
                         self.admin_login_mode = False
                     elif self.admin_panel_active:
@@ -1808,13 +2879,14 @@ class Game:
                 
                 # Main Menu
                 if self.state == GameState.MAIN_MENU:
-                    if event.key in [pygame.K_UP, pygame.K_DOWN]:
-                        direction = -1 if event.key == pygame.K_UP else 1
+                    if event.key in [pygame.K_w, pygame.K_s]:
+                        direction = -1 if event.key == pygame.K_w else 1
                         self.menu.navigate(direction, self.state)
                     elif event.key == pygame.K_RETURN:
                         option = self.menu.main_options[self.menu.selected]
                         if option == "Start Game":
-                            self.start_game()
+                            self.state = GameState.CHARACTER_SELECT
+                            self.menu.selected = 0
                         elif option == "Shop":
                             self.state = GameState.SHOP
                             self.shop.selected_index = 0
@@ -1824,10 +2896,20 @@ class Game:
                         elif option == "Exit (F5)":
                             self.running = False
                 
+                # Character Selection
+                elif self.state == GameState.CHARACTER_SELECT:
+                    available_classes = ["Base"] + [cls for cls in self.menu.character_options if cls in self.unlocked_classes]
+                    if event.key in [pygame.K_w, pygame.K_s, pygame.K_UP, pygame.K_DOWN]:
+                        direction = -1 if event.key in [pygame.K_w, pygame.K_UP] else 1
+                        self.menu.selected = (self.menu.selected + direction) % len(available_classes)
+                    elif event.key == pygame.K_RETURN:
+                        self.selected_character = available_classes[self.menu.selected]
+                        self.start_game()
+                
                 # Pause Menu
                 elif self.state == GameState.PAUSED:
-                    if event.key in [pygame.K_UP, pygame.K_DOWN]:
-                        direction = -1 if event.key == pygame.K_UP else 1
+                    if event.key in [pygame.K_w, pygame.K_s]:
+                        direction = -1 if event.key == pygame.K_w else 1
                         self.menu.navigate(direction, self.state)
                     elif event.key == pygame.K_RETURN:
                         option = self.menu.pause_options[self.menu.selected]
@@ -1838,9 +2920,9 @@ class Game:
                 
                 # Shop
                 elif self.state == GameState.SHOP:
-                    if event.key == pygame.K_UP:
+                    if event.key == pygame.K_w:
                         self.shop.navigate(-1)
-                    elif event.key == pygame.K_DOWN:
+                    elif event.key == pygame.K_s:
                         self.shop.navigate(1)
                     elif event.key == pygame.K_b:
                         self.currency, msg = self.shop.buy_item(self.currency)
@@ -1894,6 +2976,17 @@ class Game:
                         self.player.dash()
                     elif event.key == pygame.K_f:
                         self.player.parrying = True
+                    elif event.key == pygame.K_1:
+                        self.player.activate_buff(1)
+                    elif event.key == pygame.K_2:
+                        self.player.activate_buff(2)
+                    elif event.key == pygame.K_x:
+                        self.state = GameState.QUEST_MENU
+
+                # Quest menu controls
+                elif self.state == GameState.QUEST_MENU:
+                    if event.key == pygame.K_x or event.key == pygame.K_ESCAPE:
+                        self.state = GameState.PLAYING
             
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_f and self.state == GameState.PLAYING and self.player:
@@ -1903,18 +2996,34 @@ class Game:
                 if event.button == 1:  # Left click - Basic attack
                     if self.player.basic_attack():
                         player_rect = pygame.Rect(self.player.x - 30, self.player.y - 30, self.player.width + 60, self.player.height + 60)
-                        boss_rect = pygame.Rect(self.boss.x, self.boss.y, self.boss.width, self.boss.height)
-                        if player_rect.colliderect(boss_rect) and not self.boss_invincible:
-                            damage = self.player.base_damage
-                            self.boss.take_damage(damage)
-                            self.total_damage_dealt += damage
-                            
+                        
+                        miniboss_active = hasattr(self, 'miniboss_manager') and self.miniboss_manager.active
+                        damage_dealt = 0
+                        if not miniboss_active:
+                            boss_rect = pygame.Rect(self.boss.x, self.boss.y, self.boss.width, self.boss.height)
+                            if player_rect.colliderect(boss_rect) and not self.boss_invincible:
+                                damage_dealt = self.player.calculate_damage(self.player.base_damage, "melee", self.boss)
+                                self.boss.take_damage(damage_dealt)
+                                self.player.on_deal_damage(damage_dealt)
+                        else:
+                            for mboss in [self.miniboss_manager.left_boss, self.miniboss_manager.right_boss]:
+                                if mboss:
+                                    mboss_rect = pygame.Rect(mboss.x, mboss.y, mboss.width, mboss.height)
+                                    if player_rect.colliderect(mboss_rect):
+                                        damage_dealt = self.player.calculate_damage(self.player.base_damage, "melee", mboss)
+                                        mboss.take_damage(damage_dealt)
+                                        self.player.on_deal_damage(damage_dealt)
+                                        break
+                        
+                        if damage_dealt > 0:
+                            self.total_damage_dealt += damage_dealt
                             # Award currency: 2 credits per 10 damage
                             credits_earned = (self.total_damage_dealt // 10) * 2
-                            previous_credits = ((self.total_damage_dealt - damage) // 10) * 2
+                            previous_credits = ((self.total_damage_dealt - damage_dealt) // 10) * 2
                             new_credits = credits_earned - previous_credits
                             if new_credits > 0:
                                 self.currency += new_credits
+
                 elif event.button == 3:  # Right click - Start charging
                     self.player.start_charging()
             
@@ -1941,19 +3050,26 @@ class Game:
         elif self.state == GameState.SETTINGS:
             self.menu.draw_settings(self.screen)
         
+        elif self.state == GameState.CHARACTER_SELECT:
+            self.menu.draw_character_selection(self.screen, self.unlocked_classes)
+
+        elif self.state == GameState.QUEST_MENU:
+            self.menu.draw_quest_menu(self.screen, self.quests, self.player.quest_progress if self.player else {})
+
         elif self.state == GameState.PLAYING:
             # Draw game arena
-            for platform in self.platforms:
-                # Only draw platforms if they're visible (Phase 2 mechanic)
-                if self.platforms_visible:
+            for i, platform in enumerate(self.platforms):
+                is_ground = (i == 0)
+                # Only draw platforms if they're visible (Phase 2 mechanic), but ground always stays
+                if self.platforms_visible or is_ground:
                     # Add subtle glow to platforms in Phase 2
                     if self.boss and self.boss.phase == 2:
                         glow_surf = pygame.Surface((platform.width + 10, platform.height + 10), pygame.SRCALPHA)
                         glow_surf.fill((*PURPLE, 30))
-                        screen.blit(glow_surf, (platform.x - camera_x - 5, platform.y - camera_y - 5))
+                        self.screen.blit(glow_surf, (platform.x - self.camera_x - 5, platform.y - self.camera_y - 5))
                     
                     pygame.draw.rect(self.screen, PURPLE, (platform.x - self.camera_x, platform.y - self.camera_y, platform.width, platform.height))
-                else:
+                elif not is_ground:
                     # Draw faded platforms when invisible with pulsing effect
                     pulse = int(abs(math.sin(pygame.time.get_ticks() * 0.005)) * 30) + 20
                     s = pygame.Surface((platform.width, platform.height))
@@ -1994,7 +3110,10 @@ class Game:
                     self.screen.blit(glow_surf, (laser['rect'].x - self.camera_x - 10, 0))
                     pygame.draw.rect(self.screen, RED, (laser['rect'].x - self.camera_x, 0, laser['rect'].width, SCREEN_HEIGHT))
             
-            if self.boss:
+            if hasattr(self, 'miniboss_manager') and self.miniboss_manager.active:
+                self.miniboss_manager.draw(self.screen, self.camera_x, self.camera_y)
+            
+            if self.boss and not (hasattr(self, 'miniboss_manager') and self.miniboss_manager.active):
                 self.boss.draw(self.screen, self.camera_x, self.camera_y)
             if self.player:
                 self.player.draw(self.screen, self.camera_x, self.camera_y)
