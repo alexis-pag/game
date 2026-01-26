@@ -36,6 +36,39 @@ class GameState(Enum):
     CHARACTER_SELECT = 8
     QUEST_MENU = 9
 
+class Particle:
+    def __init__(self, x, y, vel_x, vel_y, color, lifetime, size=5, shape="circle"):
+        self.x = x
+        self.y = y
+        self.vel_x = vel_x
+        self.vel_y = vel_y
+        self.color = color
+        self.lifetime = lifetime
+        self.max_lifetime = lifetime
+        self.size = size
+        self.shape = shape
+
+    def update(self):
+        self.x += self.vel_x
+        self.y += self.vel_y
+        self.lifetime -= 1
+        # Gravity effect
+        self.vel_y += 0.1
+        
+    def draw(self, screen, camera_x, camera_y):
+        alpha = int((self.lifetime / self.max_lifetime) * 255)
+        if alpha <= 0: return
+        
+        s = pygame.Surface((self.size * 2, self.size * 2), pygame.SRCALPHA)
+        color_with_alpha = (*self.color, alpha)
+        
+        if self.shape == "circle":
+            pygame.draw.circle(s, color_with_alpha, (self.size, self.size), self.size)
+        else:
+            pygame.draw.rect(s, color_with_alpha, (0, 0, self.size * 2, self.size * 2))
+            
+        screen.blit(s, (self.x - camera_x - self.size, self.y - camera_y - self.size))
+
 class Item:
     def __init__(self, name, item_type, level, price, damage=0, hp_bonus=0, description=""):
         self.name = name
@@ -349,6 +382,7 @@ class Menu:
         # Quest menu state
         self.quest_view_state = 0  # 0: Class selection, 1: Quest list
         self.selected_quest_class = None
+        self.menu_rects = [] # Store rects for mouse interaction
     
     def navigate(self, direction, current_state):
         if current_state == GameState.MAIN_MENU:
@@ -374,6 +408,7 @@ class Menu:
     
     def draw_main_menu(self, screen):
         screen.fill(BLACK)
+        self.menu_rects = []
         
         title = self.font_large.render("HOLLOW KNIGHT BOSS FIGHT", True, PURPLE)
         screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
@@ -382,7 +417,9 @@ class Menu:
         for i, option in enumerate(self.main_options):
             color = YELLOW if i == self.selected else WHITE
             text = self.font_medium.render(option, True, color)
-            screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y))
+            rect = text.get_rect(center=(SCREEN_WIDTH // 2, y + text.get_height() // 2))
+            screen.blit(text, rect)
+            self.menu_rects.append(rect)
             y += 70
         
         hint = self.font_tiny.render("Navigate: Arrow Keys | Select: Enter | F2: Admin Panel", True, GRAY)
@@ -397,6 +434,7 @@ class Menu:
         overlay.set_alpha(180)
         overlay.fill(BLACK)
         screen.blit(overlay, (0, 0))
+        self.menu_rects = []
         
         title = self.font_large.render("PAUSED", True, PURPLE)
         screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 150))
@@ -408,11 +446,14 @@ class Menu:
         for i, option in enumerate(self.pause_options):
             color = YELLOW if i == self.selected else WHITE
             text = self.font_medium.render(option, True, color)
-            screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y))
+            rect = text.get_rect(center=(SCREEN_WIDTH // 2, y + text.get_height() // 2))
+            screen.blit(text, rect)
+            self.menu_rects.append(rect)
             y += 70
     
     def draw_settings(self, screen):
         screen.fill(BLACK)
+        self.menu_rects = []
         
         title = self.font_large.render("SETTINGS", True, PURPLE)
         screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
@@ -421,7 +462,9 @@ class Menu:
         for i, option in enumerate(self.settings_options):
             color = YELLOW if i == self.selected else WHITE
             text = self.font_medium.render(option, True, color)
-            screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y))
+            rect = text.get_rect(center=(SCREEN_WIDTH // 2, y + text.get_height() // 2))
+            screen.blit(text, rect)
+            self.menu_rects.append(rect)
             y += 70
         
         hint = self.font_tiny.render("Left/Right: Adjust | Enter: Select", True, GRAY)
@@ -429,6 +472,7 @@ class Menu:
     
     def draw_character_selection(self, screen, unlocked_classes):
         screen.fill(BLACK)
+        self.menu_rects = []
 
         title = self.font_large.render("SELECT YOUR CLASS", True, PURPLE)
         screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 50))
@@ -441,7 +485,9 @@ class Menu:
         for i, option in enumerate(available_classes):
             color = YELLOW if i == self.selected else WHITE
             text = self.font_medium.render(option, True, color)
-            screen.blit(text, (100, y))
+            rect = text.get_rect(topleft=(100, y))
+            screen.blit(text, rect)
+            self.menu_rects.append(rect)
             y += 60
 
         # Draw selected class details on the right
@@ -481,6 +527,7 @@ class Menu:
 
     def draw_quest_menu(self, screen, quests, quest_progress, unlocked_classes, mastery_unlocks=None):
         screen.fill(BLACK)
+        self.menu_rects = []
         if mastery_unlocks is None:
             mastery_unlocks = set()
 
@@ -513,7 +560,9 @@ class Menu:
                     display_text += " [LOCKED]"
                 
                 text = self.font_medium.render(display_text, True, color)
-                screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y))
+                rect = text.get_rect(center=(SCREEN_WIDTH // 2, y + text.get_height() // 2))
+                screen.blit(text, rect)
+                self.menu_rects.append(rect)
                 y += 60
         else:
             # Quest list for selected class
@@ -566,6 +615,7 @@ class Menu:
 
     def draw_shop(self, screen, shop, currency):
         screen.fill(BLACK)
+        self.menu_rects = []
         
         title = self.font_large.render("SHOP", True, PURPLE)
         screen.blit(title, (50, 30))
@@ -583,8 +633,10 @@ class Menu:
             
             # Background
             bg_color = DARK_PURPLE if is_selected else DARK_GRAY
-            pygame.draw.rect(screen, bg_color, (50, y, SCREEN_WIDTH - 100, 80))
-            pygame.draw.rect(screen, PURPLE if is_selected else GRAY, (50, y, SCREEN_WIDTH - 100, 80), 2)
+            rect = pygame.Rect(50, y, SCREEN_WIDTH - 100, 80)
+            pygame.draw.rect(screen, bg_color, rect)
+            pygame.draw.rect(screen, PURPLE if is_selected else GRAY, rect, 2)
+            self.menu_rects.append(rect)
             
             # Item info
             name_text = self.font_medium.render(item.name, True, WHITE)
@@ -638,7 +690,7 @@ class Player:
         self.dash_direction = 1
         self.invulnerable = False
         
-        self.attack_cooldown_max, self.attack_cooldown = 180, 0
+        self.attack_cooldown_max, self.attack_cooldown = 20, 0
         
         self.charging = False
         self.charge_percent = 0
@@ -653,6 +705,8 @@ class Player:
             self.aiming_sniper = False
         
         self.parrying = False
+        self.swing_timer = 0
+        self.swing_direction = 1
         self.fire_slow = False
         self.external_slow = 1.0
         self.burn_damage_timer = 0
@@ -759,6 +813,8 @@ class Player:
             self.dash_cooldown -= 1
         if self.attack_cooldown > 0:
             self.attack_cooldown -= 1
+        if self.swing_timer > 0:
+            self.swing_timer -= 1
         
         if self.charging:
             charge_speed = self.charge_rate
@@ -1160,6 +1216,29 @@ class Player:
         # Draw player with squash/stretch
         pygame.draw.rect(screen, color, (x, y + height_diff, draw_width, draw_height))
         
+        # Draw attack swing arc
+        if self.swing_timer > 0:
+            swing_progress = 1.0 - (self.swing_timer / 15.0)
+            arc_radius = 60
+            start_angle = -math.pi/2 if self.facing_right else math.pi/2
+            end_angle = start_angle + (math.pi * swing_progress * self.swing_direction)
+            
+            # Draw multiple arcs for a "motion blur" effect
+            for i in range(3):
+                alpha = int(150 - i * 40)
+                offset_angle = (i * 0.1) * self.swing_direction
+                points = [(int(x + draw_width // 2), int(y + draw_height // 2))]
+                for step in range(10):
+                    angle = start_angle + (end_angle - start_angle) * (step / 9.0) - offset_angle
+                    px = x + draw_width // 2 + math.cos(angle) * arc_radius
+                    py = y + draw_height // 2 + math.sin(angle) * arc_radius
+                    points.append((int(px), int(py)))
+                
+                if len(points) > 2:
+                    surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+                    pygame.draw.polygon(surf, (*WHITE, alpha), points)
+                    screen.blit(surf, (0, 0))
+
         # Directional indicator (simple triangle)
         if self.facing_right:
             points = [(x + draw_width, y + height_diff + draw_height // 2),
@@ -1399,14 +1478,26 @@ class Projectile:
         self.type = proj_type
         self.radius = 15 if proj_type == 'fireball' else 10
     
-    def update(self):
+    def update(self, game=None):
         self.x += self.vel_x
         self.y += self.vel_y
         if self.type == 'fireball':
             self.vel_y += 0.4
+            if game and random.random() < 0.3:
+                game.create_particles(self.x, self.y, ORANGE, count=1, speed=1, size=3, lifetime=20)
+        elif self.type == 'charged_attack':
+            if game and random.random() < 0.5:
+                game.create_particles(self.x, self.y, BLUE, count=1, speed=1, size=2, lifetime=15)
     
     def draw(self, screen, camera_x, camera_y):
         x, y = int(self.x - camera_x), int(self.y - camera_y)
+        
+        # Glow effect
+        glow_color = ORANGE if self.type == 'fireball' else (BLUE if self.type == 'charged_attack' else RED)
+        glow_surf = pygame.Surface((self.radius * 4, self.radius * 4), pygame.SRCALPHA)
+        pygame.draw.circle(glow_surf, (*glow_color, 80), (self.radius * 2, self.radius * 2), self.radius * 2)
+        screen.blit(glow_surf, (x - self.radius * 2, y - self.radius * 2))
+
         if self.type == 'charged_attack':
             pygame.draw.circle(screen, WHITE, (x, y), self.radius)
             pygame.draw.circle(screen, BLUE, (x, y), self.radius - 3)
@@ -1421,8 +1512,10 @@ class Minion:
         self.speed = 4
         self.vel_y = 0
         self.gravity = 0.6
+        self.animation_timer = random.randint(0, 100)
     
     def update(self, player, platforms):
+        self.animation_timer += 1
         self.x += -self.speed if player.x < self.x else self.speed
         self.vel_y += self.gravity
         self.y += self.vel_y
@@ -1434,7 +1527,14 @@ class Minion:
                 self.vel_y = 0
     
     def draw(self, screen, camera_x, camera_y):
-        pygame.draw.rect(screen, DARK_PURPLE, (self.x - camera_x, self.y - camera_y, self.width, self.height))
+        # Hopping animation
+        hop = abs(math.sin(self.animation_timer * 0.2)) * 10
+        pygame.draw.rect(screen, DARK_PURPLE, (self.x - camera_x, self.y - camera_y - hop, self.width, self.height))
+        # Eyes
+        eye_color = RED
+        eye_y = self.y - camera_y - hop + 8
+        pygame.draw.rect(screen, eye_color, (self.x - camera_x + 5, eye_y, 4, 4))
+        pygame.draw.rect(screen, eye_color, (self.x - camera_x + self.width - 9, eye_y, 4, 4))
 
 class HealingOrb:
     def __init__(self, x, y):
@@ -1983,7 +2083,7 @@ class MiniBossManager:
 class Game:
     def __init__(self):
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN | pygame.SCALED)
-        pygame.display.set_caption("Hollow Knight Boss Fight - Enhanced")
+        pygame.display.set_caption("Boss Fight - Enhanced")
         self.clock = pygame.time.Clock()
         self.running = True
         self.state = GameState.MAIN_MENU
@@ -1999,6 +2099,8 @@ class Game:
         self.healing_orbs = []
         self.orb_spawn_timer = 0
         self.laser_spawn_queue = []
+        self.particles = []
+        self.screen_shake = 0
         
         self.platforms = []
         self.walls = []
@@ -2059,7 +2161,7 @@ class Game:
             'rogue_laser_avoids': {
                 'name': 'Shadow Dancer',
                 'class': 'Rogue',
-                'description': 'Avoid 10 laser attacks',
+                'description': 'Avoid 10 laser attacks consecutively',
                 'max_progress': 10,
                 'reward': 'Unlock Rogue class'
             },
@@ -2681,11 +2783,31 @@ class Game:
                     self.minions.append(Minion(spawn_x, self.boss.y + 200))
             self.boss.minion_cooldown = self.boss.minion_cooldown_max
     
+    def create_particles(self, x, y, color, count=10, speed=5, size=5, lifetime=30):
+        for _ in range(count):
+            vel_x = random.uniform(-speed, speed)
+            vel_y = random.uniform(-speed, speed)
+            self.particles.append(Particle(x, y, vel_x, vel_y, color, random.randint(lifetime//2, lifetime), size))
+
+    def trigger_hit(self, x, y, color, shake=5):
+        self.create_particles(x, y, color)
+        self.screen_shake = max(self.screen_shake, shake)
+
     def update(self):
         self.menu.update_notification()
         
         if self.paused or self.state != GameState.PLAYING:
             return
+            
+        # Update particles
+        for p in self.particles[:]:
+            p.update()
+            if p.lifetime <= 0:
+                self.particles.remove(p)
+                
+        # Update screen shake
+        if self.screen_shake > 0:
+            self.screen_shake -= 1
         
         # Slow down gameplay during boss Phase 2 transition
         if self.boss and self.boss.phase2_transition_active:
@@ -2730,7 +2852,7 @@ class Game:
                 self.boss_ai()
             
             for proj in self.projectiles[:]:
-                proj.update()
+                proj.update(self)
                 proj_rect = pygame.Rect(proj.x - proj.radius, proj.y - proj.radius, proj.radius * 2, proj.radius * 2)
                 
                 if proj.type == 'charged_attack':
@@ -2739,6 +2861,7 @@ class Game:
                         if not self.boss_invincible:
                             damage = int(proj.damage)
                             self.boss.take_damage(damage)
+                            self.trigger_hit(proj.x, proj.y, RED, shake=10)
                             self.player.on_deal_damage(damage)
                             self.total_damage_dealt += damage
                             
@@ -2758,6 +2881,7 @@ class Game:
                                 if proj_rect.colliderect(mboss_rect):
                                     damage = int(proj.damage)
                                     mboss.take_damage(damage)
+                                    self.trigger_hit(proj.x, proj.y, RED, shake=10)
                                     self.player.on_deal_damage(damage)
                                     self.total_damage_dealt += damage
                                     
@@ -2779,6 +2903,7 @@ class Game:
                 if proj_rect.colliderect(player_rect) and not self.player.invulnerable and proj.type != 'charged_attack' and not self.godmode:
                     damage_type = "magic" if proj.type in ['fireball', 'laser'] else "normal"
                     self.player.take_damage(proj.damage, damage_type, self.boss)
+                    self.trigger_hit(self.player.x + self.player.width // 2, self.player.y + self.player.height // 2, BLUE, shake=8)
                     if proj in self.projectiles:
                         self.projectiles.remove(proj)
                     if proj.type == 'fireball':
@@ -2803,6 +2928,7 @@ class Game:
                 player_rect = pygame.Rect(self.player.x, self.player.y, self.player.width, self.player.height)
                 if minion_rect.colliderect(player_rect) and not self.player.invulnerable and not self.godmode:
                     self.player.take_damage(5, "normal", minion)
+                    self.trigger_hit(self.player.x + self.player.width // 2, self.player.y + self.player.height // 2, BLUE, shake=5)
                     self.minions.remove(minion)
             
             for fire in self.fire_zones[:]:
@@ -2818,6 +2944,7 @@ class Game:
                     player_rect = pygame.Rect(self.player.x, self.player.y, self.player.width, self.player.height)
                     if laser['rect'].colliderect(player_rect) and not self.player.invulnerable and not self.godmode:
                         self.player.take_damage(30, "magic", self.boss)
+                        self.trigger_hit(self.player.x + self.player.width // 2, self.player.y + self.player.height // 2, RED, shake=15)
             
             for wall in self.temp_walls[:]:
                 wall['timer'] -= 1
@@ -2954,6 +3081,82 @@ class Game:
                 # Auto-save meta progression on victory
                 self.save_meta_progression()
     
+    def back_to_quest_classes(self):
+        self.menu.quest_view_state = 0
+        # Reset selection to the class we were just looking at
+        all_quest_classes = ["Warrior", "Mage", "Archer", "Rogue", "Reaver"]
+        if self.menu.selected_quest_class in all_quest_classes:
+            self.menu.selected = all_quest_classes.index(self.menu.selected_quest_class)
+        else:
+            self.menu.selected = 0
+
+    def trigger_selection(self):
+        if self.state == GameState.MAIN_MENU:
+            option = self.menu.main_options[self.menu.selected]
+            if option == "Start Game":
+                self.state = GameState.CHARACTER_SELECT
+                # Set selection to last used character if available
+                available_classes = ["Base"] + [cls for cls in self.menu.character_options if cls in self.unlocked_classes]
+                if self.selected_character in available_classes:
+                    self.menu.selected = available_classes.index(self.selected_character)
+                else:
+                    self.menu.selected = 0
+            elif option == "Shop":
+                self.state = GameState.SHOP
+                self.shop.selected_index = 0
+            elif option == "Quests":
+                self.last_state = self.state
+                self.state = GameState.QUEST_MENU
+                self.menu.quest_view_state = 0
+                self.menu.selected = 0
+            elif option == "Settings":
+                self.state = GameState.SETTINGS
+                self.menu.selected = 0
+            elif option == "Exit (F5)":
+                self.running = False
+        
+        elif self.state == GameState.CHARACTER_SELECT:
+            available_classes = ["Base"] + [cls for cls in self.menu.character_options if cls in self.unlocked_classes]
+            if self.menu.selected < len(available_classes):
+                self.selected_character = available_classes[self.menu.selected]
+                self.save_meta_progression() # Save last selected class
+                self.start_game()
+        
+        elif self.state == GameState.PAUSED:
+            option = self.menu.pause_options[self.menu.selected]
+            if option == "Return to Menu (Run Lost)":
+                self.return_to_menu_run_lost()
+            elif option == "Quit Game (F5)":
+                self.running = False
+        
+        elif self.state == GameState.SHOP:
+            item = self.shop.items[self.shop.selected_index]
+            if item.owned:
+                msg = self.shop.equip_item()
+            else:
+                self.currency, msg = self.shop.buy_item(self.currency)
+            if msg:
+                self.menu.show_notification(msg)
+                self.save_meta_progression()
+        
+        elif self.state == GameState.SETTINGS:
+            if self.menu.selected == 2:  # Back
+                self.state = GameState.MAIN_MENU
+                self.menu.selected = 0
+        
+        elif self.state == GameState.QUEST_MENU:
+            if self.menu.quest_view_state == 0:
+                all_quest_classes = ["Warrior", "Mage", "Archer", "Rogue", "Reaver"]
+                if self.menu.selected < len(all_quest_classes):
+                    self.menu.selected_quest_class = all_quest_classes[self.menu.selected]
+                    self.menu.quest_view_state = 1
+                    self.menu.selected = 0
+        
+        elif self.state in [GameState.GAME_OVER, GameState.VICTORY]:
+            self.save_meta_progression()
+            self.state = GameState.MAIN_MENU
+            self.menu.selected = 0
+
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -2982,9 +3185,10 @@ class Game:
                         self.menu.selected = 0
                     elif self.state == GameState.QUEST_MENU:
                         if self.menu.quest_view_state == 1:
-                            self.menu.quest_view_state = 0
+                            self.back_to_quest_classes()
                         else:
                             self.state = self.last_state
+                            self.menu.selected = 0
                     elif self.admin_login_mode:
                         self.admin_login_mode = False
                     elif self.admin_panel_active:
@@ -3036,53 +3240,32 @@ class Game:
                 
                 # Main Menu
                 if self.state == GameState.MAIN_MENU:
-                    if event.key in [pygame.K_w, pygame.K_s]:
-                        direction = -1 if event.key == pygame.K_w else 1
+                    if event.key in [pygame.K_w, pygame.K_z, pygame.K_s]:
+                        direction = -1 if event.key in [pygame.K_w, pygame.K_z] else 1
                         self.menu.navigate(direction, self.state)
                     elif event.key == pygame.K_RETURN:
-                        option = self.menu.main_options[self.menu.selected]
-                        if option == "Start Game":
-                            self.state = GameState.CHARACTER_SELECT
-                            self.menu.selected = 0
-                        elif option == "Shop":
-                            self.state = GameState.SHOP
-                            self.shop.selected_index = 0
-                        elif option == "Quests":
-                            self.last_state = self.state
-                            self.state = GameState.QUEST_MENU
-                            self.menu.quest_view_state = 0
-                            self.menu.selected = 0
-                        elif option == "Settings":
-                            self.state = GameState.SETTINGS
-                            self.menu.selected = 0
-                        elif option == "Exit (F5)":
-                            self.running = False
+                        self.trigger_selection()
                 
                 # Character Selection
                 elif self.state == GameState.CHARACTER_SELECT:
                     available_classes = ["Base"] + [cls for cls in self.menu.character_options if cls in self.unlocked_classes]
-                    if event.key in [pygame.K_w, pygame.K_s, pygame.K_UP, pygame.K_DOWN]:
-                        direction = -1 if event.key in [pygame.K_w, pygame.K_UP] else 1
+                    if event.key in [pygame.K_w, pygame.K_z, pygame.K_s, pygame.K_UP, pygame.K_DOWN]:
+                        direction = -1 if event.key in [pygame.K_w, pygame.K_z, pygame.K_UP] else 1
                         self.menu.selected = (self.menu.selected + direction) % len(available_classes)
                     elif event.key == pygame.K_RETURN:
-                        self.selected_character = available_classes[self.menu.selected]
-                        self.start_game()
+                        self.trigger_selection()
                 
                 # Pause Menu
                 elif self.state == GameState.PAUSED:
-                    if event.key in [pygame.K_w, pygame.K_s]:
-                        direction = -1 if event.key == pygame.K_w else 1
+                    if event.key in [pygame.K_w, pygame.K_z, pygame.K_s]:
+                        direction = -1 if event.key in [pygame.K_w, pygame.K_z] else 1
                         self.menu.navigate(direction, self.state)
                     elif event.key == pygame.K_RETURN:
-                        option = self.menu.pause_options[self.menu.selected]
-                        if option == "Return to Menu (Run Lost)":
-                            self.return_to_menu_run_lost()
-                        elif option == "Quit Game (F5)":
-                            self.running = False
+                        self.trigger_selection()
                 
                 # Shop
                 elif self.state == GameState.SHOP:
-                    if event.key == pygame.K_w:
+                    if event.key in [pygame.K_w, pygame.K_z]:
                         self.shop.navigate(-1)
                     elif event.key == pygame.K_s:
                         self.shop.navigate(1)
@@ -3097,11 +3280,13 @@ class Game:
                             self.menu.show_notification(msg)
                             # Auto-save after equip change
                             self.save_meta_progression()
+                    elif event.key == pygame.K_RETURN:
+                        self.trigger_selection()
                 
                 # Settings
                 elif self.state == GameState.SETTINGS:
-                    if event.key in [pygame.K_UP, pygame.K_DOWN]:
-                        direction = -1 if event.key == pygame.K_UP else 1
+                    if event.key in [pygame.K_UP, pygame.K_DOWN, pygame.K_z]:
+                        direction = -1 if event.key in [pygame.K_UP, pygame.K_z] else 1
                         self.menu.navigate(direction, self.state)
                     elif event.key in [pygame.K_LEFT, pygame.K_RIGHT]:
                         if self.menu.selected == 0:  # Volume
@@ -3118,17 +3303,12 @@ class Game:
                             self.menu.game_speed = speeds[idx]
                             self.menu.settings_options[1] = f"Speed: {names[idx]}"
                     elif event.key == pygame.K_RETURN:
-                        if self.menu.selected == 2:  # Back
-                            self.state = GameState.MAIN_MENU
-                            self.menu.selected = 0
+                        self.trigger_selection()
                 
                 # Game Over / Victory
                 elif self.state in [GameState.GAME_OVER, GameState.VICTORY]:
                     if event.key == pygame.K_RETURN:
-                        # Save meta progression before returning to menu
-                        self.save_meta_progression()
-                        self.state = GameState.MAIN_MENU
-                        self.menu.selected = 0
+                        self.trigger_selection()
                 
                 # Gameplay controls
                 elif self.state == GameState.PLAYING:
@@ -3152,69 +3332,123 @@ class Game:
                 elif self.state == GameState.QUEST_MENU:
                     if event.key == pygame.K_x:
                         if self.menu.quest_view_state == 1:
-                            self.menu.quest_view_state = 0
+                            self.back_to_quest_classes()
                         else:
                             self.state = self.last_state
+                            self.menu.selected = 0
                     
                     elif self.menu.quest_view_state == 0:  # Class selection
                         all_quest_classes = ["Warrior", "Mage", "Archer", "Rogue", "Reaver"]
-                        if event.key in [pygame.K_w, pygame.K_UP]:
+                        if event.key in [pygame.K_w, pygame.K_z, pygame.K_UP]:
                             self.menu.selected = (self.menu.selected - 1) % len(all_quest_classes)
                         elif event.key in [pygame.K_s, pygame.K_DOWN]:
                             self.menu.selected = (self.menu.selected + 1) % len(all_quest_classes)
                         elif event.key == pygame.K_RETURN:
-                            self.menu.selected_quest_class = all_quest_classes[self.menu.selected]
-                            self.menu.quest_view_state = 1
-                            self.menu.selected = 0
+                            self.trigger_selection()
                     
                     elif self.menu.quest_view_state == 1:  # Quest list
                         if event.key == pygame.K_BACKSPACE:
-                            self.menu.quest_view_state = 0
-                            # Reset selection to the class we were just looking at
-                            all_quest_classes = ["Warrior", "Mage", "Archer", "Rogue", "Reaver"]
-                            if self.menu.selected_quest_class in all_quest_classes:
-                                self.menu.selected = all_quest_classes.index(self.menu.selected_quest_class)
-                            else:
-                                self.menu.selected = 0
+                            self.back_to_quest_classes()
             
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_f and self.state == GameState.PLAYING and self.player:
                     self.player.parrying = False
             
-            if event.type == pygame.MOUSEBUTTONDOWN and self.state == GameState.PLAYING and self.player and self.boss:
-                if event.button == 1:  # Left click - Basic attack
-                    if self.player.basic_attack():
-                        player_rect = pygame.Rect(self.player.x - 30, self.player.y - 30, self.player.width + 60, self.player.height + 60)
-                        
-                        miniboss_active = hasattr(self, 'miniboss_manager') and self.miniboss_manager.active
-                        damage_dealt = 0
-                        if not miniboss_active:
-                            boss_rect = pygame.Rect(self.boss.x, self.boss.y, self.boss.width, self.boss.height)
-                            if player_rect.colliderect(boss_rect) and not self.boss_invincible:
-                                damage_dealt = self.player.calculate_damage(self.player.base_damage, "melee", self.boss)
-                                self.boss.take_damage(damage_dealt)
-                                self.player.on_deal_damage(damage_dealt)
-                        else:
-                            for mboss in [self.miniboss_manager.left_boss, self.miniboss_manager.right_boss]:
-                                if mboss:
-                                    mboss_rect = pygame.Rect(mboss.x, mboss.y, mboss.width, mboss.height)
-                                    if player_rect.colliderect(mboss_rect):
-                                        damage_dealt = self.player.calculate_damage(self.player.base_damage, "melee", mboss)
-                                        mboss.take_damage(damage_dealt)
-                                        self.player.on_deal_damage(damage_dealt)
-                                        break
-                        
-                        if damage_dealt > 0:
-                            self.total_damage_dealt += damage_dealt
-                            # Award currency: 2 credits per 10 damage
-                            credits_earned = (self.total_damage_dealt // 10) * 2
-                            previous_credits = ((self.total_damage_dealt - damage_dealt) // 10) * 2
-                            new_credits = credits_earned - previous_credits
-                            if new_credits > 0:
-                                self.currency += new_credits
+            if event.type == pygame.MOUSEMOTION:
+                if self.state != GameState.PLAYING:
+                    for i, rect in enumerate(self.menu.menu_rects):
+                        if rect.collidepoint(event.pos):
+                            self.menu.selected = i
+                            if self.state == GameState.SHOP:
+                                self.shop.selected_index = self.shop.scroll_offset + i
+                            break
 
-                elif event.button == 3:  # Right click - Start charging
-                    self.player.start_charging()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if self.state != GameState.PLAYING:
+                    mouse_pos = event.pos
+                    # Scale mouse position if using SCALED (though pygame usually handles this, sometimes it needs manual if custom scaling)
+                    # With pygame.SCALED, event.pos should be in logical coordinates.
+                    
+                    for i, rect in enumerate(self.menu.menu_rects):
+                        if rect.collidepoint(mouse_pos):
+                            if self.state == GameState.SHOP:
+                                actual_index = self.shop.scroll_offset + i
+                                if self.shop.selected_index == actual_index:
+                                    # Already selected, try to Buy/Equip
+                                    item = self.shop.items[actual_index]
+                                    if item.owned:
+                                        msg = self.shop.equip_item()
+                                    else:
+                                        self.currency, msg = self.shop.buy_item(self.currency)
+                                    if msg:
+                                        self.menu.show_notification(msg)
+                                        self.save_meta_progression()
+                                else:
+                                    self.shop.selected_index = actual_index
+                                    self.menu.selected = i
+                            elif self.state == GameState.SETTINGS:
+                                self.menu.selected = i
+                                if i == 0: # Volume
+                                    if mouse_pos[0] < SCREEN_WIDTH // 2:
+                                        self.menu.volume = max(0, self.menu.volume - 10)
+                                    else:
+                                        self.menu.volume = min(100, self.menu.volume + 10)
+                                    self.menu.settings_options[0] = f"Volume: {self.menu.volume}%"
+                                elif i == 1: # Speed
+                                    speeds = [0.5, 1.0, 1.5, 2.0]
+                                    names = ["Slow", "Normal", "Fast", "Very Fast"]
+                                    idx = speeds.index(self.menu.game_speed)
+                                    if mouse_pos[0] < SCREEN_WIDTH // 2:
+                                        idx = max(0, idx - 1)
+                                    else:
+                                        idx = min(len(speeds) - 1, idx + 1)
+                                    self.menu.game_speed = speeds[idx]
+                                    self.menu.settings_options[1] = f"Speed: {names[idx]}"
+                                else:
+                                    self.trigger_selection()
+                            else:
+                                self.menu.selected = i
+                                self.trigger_selection()
+                            break
+
+                elif self.state == GameState.PLAYING and self.player and self.boss:
+                    if event.button == 1:  # Left click - Basic attack
+                        if self.player.basic_attack():
+                            self.player.swing_timer = 15
+                            self.player.swing_direction *= -1 # Alternate swing direction
+                            player_rect = pygame.Rect(self.player.x - 30, self.player.y - 30, self.player.width + 60, self.player.height + 60)
+                        
+                            miniboss_active = hasattr(self, 'miniboss_manager') and self.miniboss_manager.active
+                            damage_dealt = 0
+                            if not miniboss_active:
+                                boss_rect = pygame.Rect(self.boss.x, self.boss.y, self.boss.width, self.boss.height)
+                                if player_rect.colliderect(boss_rect) and not self.boss_invincible:
+                                    damage_dealt = self.player.calculate_damage(self.player.base_damage, "melee", self.boss)
+                                    self.boss.take_damage(damage_dealt)
+                                    self.trigger_hit(self.boss.x + self.boss.width // 2, self.boss.y + self.boss.height // 2, RED, shake=12)
+                                    self.player.on_deal_damage(damage_dealt)
+                            else:
+                                for mboss in [self.miniboss_manager.left_boss, self.miniboss_manager.right_boss]:
+                                    if mboss:
+                                        mboss_rect = pygame.Rect(mboss.x, mboss.y, mboss.width, mboss.height)
+                                        if player_rect.colliderect(mboss_rect):
+                                            damage_dealt = self.player.calculate_damage(self.player.base_damage, "melee", mboss)
+                                            mboss.take_damage(damage_dealt)
+                                            self.trigger_hit(mboss.x + mboss.width // 2, mboss.y + mboss.height // 2, RED, shake=12)
+                                            self.player.on_deal_damage(damage_dealt)
+                                            break
+                            
+                            if damage_dealt > 0:
+                                self.total_damage_dealt += damage_dealt
+                                # Award currency: 2 credits per 10 damage
+                                credits_earned = (self.total_damage_dealt // 10) * 2
+                                previous_credits = ((self.total_damage_dealt - damage_dealt) // 10) * 2
+                                new_credits = credits_earned - previous_credits
+                                if new_credits > 0:
+                                    self.currency += new_credits
+
+                    elif event.button == 3:  # Right click - Start charging
+                        self.player.start_charging()
             
             if event.type == pygame.MOUSEBUTTONUP and self.state == GameState.PLAYING and self.player:
                 if event.button == 3:  # Right click release - Charged attack
@@ -3228,8 +3462,19 @@ class Game:
                         self.projectiles.append(Projectile(start_x, start_y, vel_x, vel_y, attack_data['damage'], 'charged_attack'))
     
     def draw(self):
+        # Calculate screen shake offset
+        shake_x = 0
+        shake_y = 0
+        if self.screen_shake > 0:
+            shake_x = random.randint(-self.screen_shake, self.screen_shake)
+            shake_y = random.randint(-self.screen_shake, self.screen_shake)
+
         self.screen.fill(BLACK)
         
+        # Apply shake to camera for drawing
+        cam_x = self.camera_x + shake_x
+        cam_y = self.camera_y + shake_y
+
         if self.state == GameState.MAIN_MENU:
             self.menu.draw_main_menu(self.screen)
         
@@ -3250,6 +3495,10 @@ class Game:
             self.menu.draw_quest_menu(self.screen, self.quests, display_progress, self.unlocked_classes, self.mastery_unlocks)
 
         elif self.state == GameState.PLAYING:
+            # Draw particles first (behind entities)
+            for p in self.particles:
+                p.draw(self.screen, cam_x, cam_y)
+
             # Draw game arena
             for i, platform in enumerate(self.platforms):
                 is_ground = (i == 0)
@@ -3259,66 +3508,66 @@ class Game:
                     if self.boss and self.boss.phase == 2:
                         glow_surf = pygame.Surface((platform.width + 10, platform.height + 10), pygame.SRCALPHA)
                         glow_surf.fill((*PURPLE, 30))
-                        self.screen.blit(glow_surf, (platform.x - self.camera_x - 5, platform.y - self.camera_y - 5))
+                        self.screen.blit(glow_surf, (platform.x - cam_x - 5, platform.y - cam_y - 5))
                     
-                    pygame.draw.rect(self.screen, PURPLE, (platform.x - self.camera_x, platform.y - self.camera_y, platform.width, platform.height))
+                    pygame.draw.rect(self.screen, PURPLE, (platform.x - cam_x, platform.y - cam_y, platform.width, platform.height))
                 elif not is_ground:
                     # Draw faded platforms when invisible with pulsing effect
                     pulse = int(abs(math.sin(pygame.time.get_ticks() * 0.005)) * 30) + 20
                     s = pygame.Surface((platform.width, platform.height))
                     s.set_alpha(pulse)
                     s.fill(PURPLE)
-                    self.screen.blit(s, (platform.x - self.camera_x, platform.y - self.camera_y))
+                    self.screen.blit(s, (platform.x - cam_x, platform.y - cam_y))
             
             for wall in self.temp_walls:
                 # Animated temp walls
                 alpha = int(200 + abs(math.sin(pygame.time.get_ticks() * 0.003)) * 55)
                 wall_surf = pygame.Surface((wall['rect'].width, wall['rect'].height), pygame.SRCALPHA)
                 wall_surf.fill((*DARK_PURPLE, alpha))
-                self.screen.blit(wall_surf, (wall['rect'].x - self.camera_x, wall['rect'].y - self.camera_y))
+                self.screen.blit(wall_surf, (wall['rect'].x - cam_x, wall['rect'].y - cam_y))
             
             for fire in self.fire_zones:
                 # Animated fire with flickering
                 flicker = int(abs(math.sin(pygame.time.get_ticks() * 0.01)) * 20)
                 fire_color = (255, flicker, 0)
-                pygame.draw.rect(self.screen, fire_color, (fire['rect'].x - self.camera_x, fire['rect'].y - self.camera_y, fire['rect'].width, fire['rect'].height))
+                pygame.draw.rect(self.screen, fire_color, (fire['rect'].x - cam_x, fire['rect'].y - cam_y, fire['rect'].width, fire['rect'].height))
                 
                 # Add fire particles
                 for i in range(3):
                     offset = random.randint(-10, 10)
                     particle_y = fire['rect'].y - random.randint(0, 20)
                     particle_size = random.randint(2, 5)
-                    pygame.draw.circle(self.screen, ORANGE, (fire['rect'].x + fire['rect'].width // 2 + offset - self.camera_x, particle_y - self.camera_y), particle_size)
+                    pygame.draw.circle(self.screen, ORANGE, (fire['rect'].x + fire['rect'].width // 2 + offset - cam_x, particle_y - cam_y), particle_size)
             
             for laser in self.lasers:
                 if laser['timer'] > laser['fire_frame']:
                     # Warning phase with pulsing
                     pulse = int(abs(math.sin(laser['timer'] * 0.2)) * 100) + 100
-                    pygame.draw.rect(self.screen, (*YELLOW, pulse), (laser['rect'].x - self.camera_x, 0, laser['rect'].width, SCREEN_HEIGHT), 3)
+                    pygame.draw.rect(self.screen, (*YELLOW, pulse), (laser['rect'].x - cam_x, 0, laser['rect'].width, SCREEN_HEIGHT), 3)
                 else:
                     # Active laser with glow
                     glow_width = laser['rect'].width + 20
                     glow_surf = pygame.Surface((glow_width, SCREEN_HEIGHT), pygame.SRCALPHA)
                     glow_surf.fill((*RED, 100))
-                    self.screen.blit(glow_surf, (laser['rect'].x - self.camera_x - 10, 0))
-                    pygame.draw.rect(self.screen, RED, (laser['rect'].x - self.camera_x, 0, laser['rect'].width, SCREEN_HEIGHT))
+                    self.screen.blit(glow_surf, (laser['rect'].x - cam_x - 10, 0))
+                    pygame.draw.rect(self.screen, RED, (laser['rect'].x - cam_x, 0, laser['rect'].width, SCREEN_HEIGHT))
             
             if hasattr(self, 'miniboss_manager') and self.miniboss_manager.active:
-                self.miniboss_manager.draw(self.screen, self.camera_x, self.camera_y)
+                self.miniboss_manager.draw(self.screen, cam_x, cam_y)
             
             if self.boss and not (hasattr(self, 'miniboss_manager') and self.miniboss_manager.active):
-                self.boss.draw(self.screen, self.camera_x, self.camera_y)
+                self.boss.draw(self.screen, cam_x, cam_y)
             if self.player:
-                self.player.draw(self.screen, self.camera_x, self.camera_y)
+                self.player.draw(self.screen, cam_x, cam_y)
             
             for proj in self.projectiles:
-                proj.draw(self.screen, self.camera_x, self.camera_y)
+                proj.draw(self.screen, cam_x, cam_y)
             
             for minion in self.minions:
-                minion.draw(self.screen, self.camera_x, self.camera_y)
+                minion.draw(self.screen, cam_x, cam_y)
             
             for orb in self.healing_orbs:
-                orb.draw(self.screen, self.camera_x, self.camera_y)
+                orb.draw(self.screen, cam_x, cam_y)
             
             # Currency HUD
             currency_text = self.menu.font_small.render(f"Currency: {self.currency}", True, YELLOW)
