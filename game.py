@@ -35,6 +35,7 @@ class GameState(Enum):
     SETTINGS = 7
     CHARACTER_SELECT = 8
     QUEST_MENU = 9
+    REBIND_KEYS = 10
 
 class Particle:
     def __init__(self, x, y, vel_x, vel_y, color, lifetime, size=5, shape="circle"):
@@ -103,7 +104,7 @@ class SaveManager:
     def __init__(self):
         self.save_file = "game_meta_save.json"
 
-    def save_meta_progression(self, currency, items, unlocked_classes, quest_progress, mastery_unlocks=None, last_class=None):
+    def save_meta_progression(self, currency, items, unlocked_classes, quest_progress, mastery_unlocks=None, last_class=None, control_scheme=0, custom_controls=None):
         """Save ONLY meta progression data - never runtime state"""
         if mastery_unlocks is None:
             mastery_unlocks = []
@@ -144,6 +145,8 @@ class SaveManager:
             'mastery_unlocks': list(mastery_unlocks),
             'quest_progress': quest_progress,
             'last_selected_class': last_class,
+            'control_scheme': control_scheme,
+            'custom_controls': custom_controls,
             # Meta unlocks
             'unlocked_boss_phases': []
         }
@@ -330,7 +333,23 @@ class Menu:
         
         self.main_options = ["Start Game", "Shop", "Quests", "Settings", "Exit (F5)"]  # ADDED "Quests"
         self.pause_options = ["Return to Menu (Run Lost)", "Quit Game (F5)"]  # CHANGED pause options
-        self.settings_options = ["Volume: 50%", "Speed: Normal", "Back"]
+        self.settings_options = ["Volume: 50%", "Speed: Normal", "Controls: ZQSD", "Rebind Keys", "Back"]
+        self.control_schemes = ["ZQSD", "WASD", "Arrows", "Custom"]
+        self.current_control_scheme_idx = 0
+        self.custom_controls = {
+            'left': pygame.K_q,
+            'right': pygame.K_d,
+            'down': pygame.K_s,
+            'jump': pygame.K_SPACE,
+            'dash': pygame.K_a,
+            'parry': pygame.K_f,
+            'buff1': pygame.K_w,
+            'buff2': pygame.K_c,
+            'quests': pygame.K_x
+        }
+        self.rebind_options = list(self.custom_controls.keys())
+        self.binding_mode = False
+        self.binding_action = None
         self.character_options = ["Warrior", "Mage", "Archer", "Rogue", "Reaver"]
         
         self.character_stats = {
@@ -393,10 +412,53 @@ class Menu:
             options = self.settings_options
         elif current_state == GameState.CHARACTER_SELECT:
             options = self.character_options
+        elif current_state == GameState.REBIND_KEYS:
+            options = self.rebind_options
         else:
             return
         
         self.selected = (self.selected + direction) % len(options)
+
+    def get_controls(self):
+        scheme = self.control_schemes[self.current_control_scheme_idx]
+        if scheme == "ZQSD":
+            return {
+                'left': pygame.K_q,
+                'right': pygame.K_d,
+                'down': pygame.K_s,
+                'jump': pygame.K_SPACE,
+                'dash': pygame.K_a,
+                'parry': pygame.K_f,
+                'buff1': pygame.K_w,
+                'buff2': pygame.K_c,
+                'quests': pygame.K_x
+            }
+        elif scheme == "WASD":
+            return {
+                'left': pygame.K_a,
+                'right': pygame.K_d,
+                'down': pygame.K_s,
+                'jump': pygame.K_SPACE,
+                'dash': pygame.K_q,
+                'parry': pygame.K_f,
+                'buff1': pygame.K_e,
+                'buff2': pygame.K_c,
+                'quests': pygame.K_x
+            }
+        elif scheme == "Arrows":
+            return {
+                'left': pygame.K_LEFT,
+                'right': pygame.K_RIGHT,
+                'down': pygame.K_DOWN,
+                'jump': pygame.K_UP,
+                'dash': pygame.K_SPACE,
+                'parry': pygame.K_f,
+                'buff1': pygame.K_z,
+                'buff2': pygame.K_c,
+                'quests': pygame.K_x
+            }
+        else: # Custom
+            return self.custom_controls
     
     def show_notification(self, message):
         self.notification = message
@@ -609,6 +671,35 @@ class Menu:
             hint_text = "ESC/X/BACKSPACE: Back to Classes"
         else:
             hint_text = "ESC/X: Close Menu | ENTER: View Quests"
+            
+        hint = self.font_tiny.render(hint_text, True, GRAY)
+        screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2, SCREEN_HEIGHT - 50))
+
+    def draw_rebind_menu(self, screen):
+        screen.fill(BLACK)
+        self.menu_rects = []
+        
+        title = self.font_large.render("REBIND KEYS", True, PURPLE)
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 50))
+        
+        y = 150
+        for i, action in enumerate(self.rebind_options):
+            color = YELLOW if i == self.selected else WHITE
+            if self.binding_mode and self.binding_action == action:
+                color = GREEN
+            
+            key_code = self.custom_controls[action]
+            key_name = pygame.key.name(key_code).upper()
+            
+            text = self.font_medium.render(f"{action.upper()}: {key_name}", True, color)
+            rect = text.get_rect(center=(SCREEN_WIDTH // 2, y + text.get_height() // 2))
+            screen.blit(text, rect)
+            self.menu_rects.append(rect)
+            y += 50
+        
+        hint_text = "Select action and press ENTER to rebind | ESC to go back"
+        if self.binding_mode:
+            hint_text = f"Press any key to bind {self.binding_action.upper()}..."
             
         hint = self.font_tiny.render(hint_text, True, GRAY)
         screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2, SCREEN_HEIGHT - 50))
@@ -859,7 +950,20 @@ class Player:
             elif self.charging:
                 speed *= 0.25 if self.charge_percent >= self.max_charge else 0.5
             
-            # ZQSD controls (Q=left, D=right, S=fast fall)
+        # ZQSD controls (Q=left, D=right, S=fast fall)
+        ctrl = self.game.menu.get_controls() if hasattr(self, 'game') and self.game else None
+        
+        if ctrl:
+            if keys[ctrl['left']]:
+                self.vel_x = -speed
+                self.facing_right = False
+            if keys[ctrl['right']]:
+                self.vel_x = speed
+                self.facing_right = True
+            if keys[ctrl['down']]:
+                self.vel_y += self.gravity * 0.5  # Fast fall assistance
+        else:
+            # Fallback to hardcoded ZQSD
             if keys[pygame.K_q]:
                 self.vel_x = -speed
                 self.facing_right = False
@@ -868,11 +972,11 @@ class Player:
                 self.facing_right = True
             if keys[pygame.K_s]:
                 self.vel_y += self.gravity * 0.5  # Fast fall assistance
-            
-            if self.on_wall and self.vel_y > 0:
-                self.vel_y += self.gravity * 0.3
-            else:
-                self.vel_y += self.gravity
+        
+        if self.on_wall and self.vel_y > 0:
+            self.vel_y += self.gravity * 0.3
+        else:
+            self.vel_y += self.gravity
         
         # Squash and stretch for jump/land
         if not self.on_ground and self.vel_y < 0:  # Jumping
@@ -2279,18 +2383,29 @@ class Game:
             self.mastery_unlocks = mastery_unlocks
             self.selected_character = meta_data.get('last_selected_class', "Base")
             self.meta_quest_progress.update(meta_data.get('quest_progress', {}))
+            self.menu.current_control_scheme_idx = meta_data.get('control_scheme', 0)
+            self.menu.settings_options[2] = f"Controls: {self.menu.control_schemes[self.menu.current_control_scheme_idx]}"
+            self.update_touch_opened_file()
             self.menu.show_notification(f"Meta progression loaded! Credits: {self.currency}")
         else:
             # No save exists - start fresh
             self.currency = 0
     
+    def update_touch_opened_file(self):
+        """Update the touchOpened file with the current control scheme"""
+        try:
+            with open("touchOpened.txt", "w") as f:
+                f.write(self.menu.control_schemes[self.menu.current_control_scheme_idx])
+        except Exception as e:
+            print(f"Error updating touchOpened file: {e}")
+
     def save_meta_progression(self):
         """Save ONLY meta progression - never runtime state"""
         # Sync current player quest progress to meta
         if self.player:
             self.meta_quest_progress.update(self.player.quest_progress)
 
-        if self.save_manager.save_meta_progression(self.currency, self.shop.items, self.unlocked_classes, self.meta_quest_progress, self.mastery_unlocks, self.selected_character):
+        if self.save_manager.save_meta_progression(self.currency, self.shop.items, self.unlocked_classes, self.meta_quest_progress, self.mastery_unlocks, self.selected_character, self.menu.current_control_scheme_idx):
             self.menu.show_notification("Progress saved!")
             return True
         else:
@@ -3140,9 +3255,18 @@ class Game:
                 self.save_meta_progression()
         
         elif self.state == GameState.SETTINGS:
-            if self.menu.selected == 2:  # Back
+            option = self.menu.settings_options[self.menu.selected]
+            if option == "Rebind Keys":
+                self.state = GameState.REBIND_KEYS
+                self.menu.selected = 0
+            elif option == "Back":
                 self.state = GameState.MAIN_MENU
                 self.menu.selected = 0
+        
+        elif self.state == GameState.REBIND_KEYS:
+            if not self.menu.binding_mode:
+                self.menu.binding_mode = True
+                self.menu.binding_action = self.menu.rebind_options[self.menu.selected]
         
         elif self.state == GameState.QUEST_MENU:
             if self.menu.quest_view_state == 0:
@@ -3167,6 +3291,18 @@ class Game:
                     self.running = False
                     return
                 
+                # Rebind logic
+                if self.state == GameState.REBIND_KEYS and self.menu.binding_mode:
+                    if event.key != pygame.K_ESCAPE:
+                        self.menu.custom_controls[self.menu.binding_action] = event.key
+                        self.menu.binding_mode = False
+                        # Force "Custom" scheme when rebinding
+                        self.menu.current_control_scheme_idx = 3 
+                        self.menu.settings_options[2] = f"Controls: {self.menu.control_schemes[3]}"
+                        self.update_touch_opened_file()
+                        self.save_meta_progression()
+                    return
+
                 # ESC - Context-dependent
                 if event.key == pygame.K_ESCAPE:
                     if self.state == GameState.PLAYING:
@@ -3183,6 +3319,12 @@ class Game:
                     elif self.state == GameState.CHARACTER_SELECT:
                         self.state = GameState.MAIN_MENU
                         self.menu.selected = 0
+                    elif self.state == GameState.REBIND_KEYS:
+                        if self.menu.binding_mode:
+                            self.menu.binding_mode = False
+                        else:
+                            self.state = GameState.SETTINGS
+                            self.menu.selected = 0
                     elif self.state == GameState.QUEST_MENU:
                         if self.menu.quest_view_state == 1:
                             self.back_to_quest_classes()
@@ -3289,6 +3431,7 @@ class Game:
                         direction = -1 if event.key in [pygame.K_UP, pygame.K_z] else 1
                         self.menu.navigate(direction, self.state)
                     elif event.key in [pygame.K_LEFT, pygame.K_RIGHT]:
+                        # Volume and Speed and Controls switch
                         if self.menu.selected == 0:  # Volume
                             self.menu.volume = max(0, min(100, self.menu.volume + (10 if event.key == pygame.K_RIGHT else -10)))
                             self.menu.settings_options[0] = f"Volume: {self.menu.volume}%"
@@ -3302,8 +3445,26 @@ class Game:
                                 idx = max(0, idx - 1)
                             self.menu.game_speed = speeds[idx]
                             self.menu.settings_options[1] = f"Speed: {names[idx]}"
+                        elif self.menu.selected == 2:  # Controls
+                            if event.key == pygame.K_RIGHT:
+                                self.menu.current_control_scheme_idx = (self.menu.current_control_scheme_idx + 1) % len(self.menu.control_schemes)
+                            else:
+                                self.menu.current_control_scheme_idx = (self.menu.current_control_scheme_idx - 1) % len(self.menu.control_schemes)
+                            self.menu.settings_options[2] = f"Controls: {self.menu.control_schemes[self.menu.current_control_scheme_idx]}"
+                            self.update_touch_opened_file()
+                            # Auto-save settings
+                            self.save_meta_progression()
                     elif event.key == pygame.K_RETURN:
                         self.trigger_selection()
+
+                # Rebind Keys
+                elif self.state == GameState.REBIND_KEYS:
+                    if not self.menu.binding_mode:
+                        if event.key in [pygame.K_UP, pygame.K_DOWN, pygame.K_z, pygame.K_s]:
+                            direction = -1 if event.key in [pygame.K_UP, pygame.K_z] else 1
+                            self.menu.navigate(direction, self.state)
+                        elif event.key == pygame.K_RETURN:
+                            self.trigger_selection()
                 
                 # Game Over / Victory
                 elif self.state in [GameState.GAME_OVER, GameState.VICTORY]:
@@ -3312,17 +3473,18 @@ class Game:
                 
                 # Gameplay controls
                 elif self.state == GameState.PLAYING:
-                    if event.key == pygame.K_SPACE:
+                    ctrl = self.menu.get_controls()
+                    if event.key == ctrl['jump']:
                         self.player.jump()
-                    elif event.key == pygame.K_a:
+                    elif event.key == ctrl['dash']:
                         self.player.dash()
-                    elif event.key == pygame.K_f:
+                    elif event.key == ctrl['parry']:
                         self.player.parrying = True
-                    elif event.key == pygame.K_w:
+                    elif event.key == ctrl['buff1']:
                         self.player.activate_buff(1)
-                    elif event.key == pygame.K_c:
+                    elif event.key == ctrl['buff2']:
                         self.player.activate_buff(2)
-                    elif event.key == pygame.K_x:
+                    elif event.key == ctrl['quests']:
                         self.last_state = self.state
                         self.state = GameState.QUEST_MENU
                         self.menu.quest_view_state = 0
@@ -3351,7 +3513,8 @@ class Game:
                             self.back_to_quest_classes()
             
             if event.type == pygame.KEYUP:
-                if event.key == pygame.K_f and self.state == GameState.PLAYING and self.player:
+                ctrl = self.menu.get_controls()
+                if event.key == ctrl['parry'] and self.state == GameState.PLAYING and self.player:
                     self.player.parrying = False
             
             if event.type == pygame.MOUSEMOTION:
@@ -3404,6 +3567,14 @@ class Game:
                                         idx = min(len(speeds) - 1, idx + 1)
                                     self.menu.game_speed = speeds[idx]
                                     self.menu.settings_options[1] = f"Speed: {names[idx]}"
+                                elif i == 2: # Controls
+                                    if mouse_pos[0] < SCREEN_WIDTH // 2:
+                                        self.menu.current_control_scheme_idx = (self.menu.current_control_scheme_idx - 1) % len(self.menu.control_schemes)
+                                    else:
+                                        self.menu.current_control_scheme_idx = (self.menu.current_control_scheme_idx + 1) % len(self.menu.control_schemes)
+                                    self.menu.settings_options[2] = f"Controls: {self.menu.control_schemes[self.menu.current_control_scheme_idx]}"
+                                    self.update_touch_opened_file()
+                                    self.save_meta_progression()
                                 else:
                                     self.trigger_selection()
                             else:
@@ -3486,6 +3657,9 @@ class Game:
         
         elif self.state == GameState.CHARACTER_SELECT:
             self.menu.draw_character_selection(self.screen, self.unlocked_classes)
+
+        elif self.state == GameState.REBIND_KEYS:
+            self.menu.draw_rebind_menu(self.screen)
 
         elif self.state == GameState.QUEST_MENU:
             # Sync if player exists to show real-time progress
