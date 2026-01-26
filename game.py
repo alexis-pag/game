@@ -22,6 +22,7 @@ GREEN = (0, 255, 0)
 BLUE = (100, 149, 237)
 GRAY = (128, 128, 128)
 DARK_GRAY = (50, 50, 50)
+GOLD = (255, 215, 0)
 
 class GameState(Enum):
     MAIN_MENU = 0
@@ -69,9 +70,11 @@ class SaveManager:
     def __init__(self):
         self.save_file = "game_meta_save.json"
 
-    def save_meta_progression(self, currency, items, unlocked_classes):
+    def save_meta_progression(self, currency, items, unlocked_classes, quest_progress, mastery_unlocks=None, last_class=None):
         """Save ONLY meta progression data - never runtime state"""
-        # Extract only owned items and their equipped status
+        if mastery_unlocks is None:
+            mastery_unlocks = []
+        
         owned_items = []
         for item in items:
             if item.owned:
@@ -82,7 +85,6 @@ class SaveManager:
                     'equipped': item.equipped
                 })
 
-        # Find highest unlocked tiers
         highest_armor = 0
         highest_weapon = 0
         default_armor = None
@@ -106,8 +108,11 @@ class SaveManager:
             'default_armor': default_armor,
             'default_weapon': default_weapon,
             'unlocked_classes': list(unlocked_classes),
+            'mastery_unlocks': list(mastery_unlocks),
+            'quest_progress': quest_progress,
+            'last_selected_class': last_class,
             # Meta unlocks
-            'unlocked_boss_phases': []  # Could add phase unlocks here
+            'unlocked_boss_phases': []
         }
 
         try:
@@ -135,13 +140,14 @@ class SaveManager:
                         item.equipped = item_data['equipped']
                         break
 
-            # Restore unlocked classes
+            # Restore unlocked classes and masteries
             unlocked_classes = set(meta_data.get('unlocked_classes', []))
+            mastery_unlocks = set(meta_data.get('mastery_unlocks', []))
 
-            return meta_data, unlocked_classes
+            return meta_data, unlocked_classes, mastery_unlocks
         except Exception as e:
             print(f"Meta load error: {e}")
-            return None, set()
+            return None, set(), set()
     
     def save_exists(self):
         return os.path.exists(self.save_file)
@@ -289,7 +295,7 @@ class Menu:
         self.font_small = pygame.font.Font(None, 32)
         self.font_tiny = pygame.font.Font(None, 24)
         
-        self.main_options = ["Start Game", "Shop", "Settings", "Exit (F5)"]  # REMOVED "Load Game"
+        self.main_options = ["Start Game", "Shop", "Quests", "Settings", "Exit (F5)"]  # ADDED "Quests"
         self.pause_options = ["Return to Menu (Run Lost)", "Quit Game (F5)"]  # CHANGED pause options
         self.settings_options = ["Volume: 50%", "Speed: Normal", "Back"]
         self.character_options = ["Warrior", "Mage", "Archer", "Rogue", "Reaver"]
@@ -339,6 +345,10 @@ class Menu:
         
         self.notification = ""
         self.notification_timer = 0
+        
+        # Quest menu state
+        self.quest_view_state = 0  # 0: Class selection, 1: Quest list
+        self.selected_quest_class = None
     
     def navigate(self, direction, current_state):
         if current_state == GameState.MAIN_MENU:
@@ -469,42 +479,89 @@ class Menu:
         hint = self.font_tiny.render("Navigate: Arrow Keys | Select: Enter | Back: ESC", True, GRAY)
         screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2, SCREEN_HEIGHT - 50))
 
-    def draw_quest_menu(self, screen, quests, quest_progress):
+    def draw_quest_menu(self, screen, quests, quest_progress, unlocked_classes, mastery_unlocks=None):
         screen.fill(BLACK)
+        if mastery_unlocks is None:
+            mastery_unlocks = set()
 
         title = self.font_large.render("QUEST LOG", True, PURPLE)
         screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 50))
 
-        y = 150
-        for quest_key, quest in quests.items():
-            # Quest name and class
-            name_text = self.font_medium.render(f"{quest['name']} ({quest['class']})", True, WHITE)
-            screen.blit(name_text, (50, y))
-
-            # Progress
-            current_progress = quest_progress.get(quest_key, 0)
-            max_progress = quest['max_progress']
-            progress_text = self.font_small.render(f"Progress: {current_progress}/{max_progress}", True, GRAY)
-            screen.blit(progress_text, (50, y + 40))
-
-            # Completion status
-            if current_progress >= max_progress:
-                status_text = self.font_small.render("COMPLETED", True, GREEN)
+        if self.quest_view_state == 0:
+            # Class selection
+            subtitle = self.font_medium.render("Select a Class to View Quests", True, YELLOW)
+            screen.blit(subtitle, (SCREEN_WIDTH // 2 - subtitle.get_width() // 2, 120))
+            
+            all_quest_classes = ["Warrior", "Mage", "Archer", "Rogue", "Reaver"]
+            y = 200
+            for i, cls in enumerate(all_quest_classes):
+                is_selected = i == self.selected
+                is_unlocked = cls in unlocked_classes
+                
+                if is_selected:
+                    color = YELLOW
+                elif is_unlocked:
+                    color = WHITE
+                else:
+                    color = GRAY
+                
+                display_text = cls
+                if cls in mastery_unlocks:
+                    display_text += " [MASTERED]"
+                    if not is_selected: color = GOLD
+                elif not is_unlocked:
+                    display_text += " [LOCKED]"
+                
+                text = self.font_medium.render(display_text, True, color)
+                screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, y))
+                y += 60
+        else:
+            # Quest list for selected class
+            subtitle = self.font_medium.render(f"{self.selected_quest_class} Quests", True, YELLOW)
+            screen.blit(subtitle, (SCREEN_WIDTH // 2 - subtitle.get_width() // 2, 120))
+            
+            class_quests = {k: v for k, v in quests.items() if v['class'] == self.selected_quest_class}
+            
+            y = 200
+            if not class_quests:
+                msg = self.font_small.render("No quests available for this class.", True, GRAY)
+                screen.blit(msg, (SCREEN_WIDTH // 2 - msg.get_width() // 2, y))
             else:
-                status_text = self.font_small.render("IN PROGRESS", True, YELLOW)
-            screen.blit(status_text, (SCREEN_WIDTH - status_text.get_width() - 50, y + 20))
+                for quest_key, quest in class_quests.items():
+                    # Background for each quest
+                    pygame.draw.rect(screen, DARK_GRAY, (80, y - 10, SCREEN_WIDTH - 160, 100))
+                    pygame.draw.rect(screen, PURPLE, (80, y - 10, SCREEN_WIDTH - 160, 100), 1)
 
-            # Description
-            desc_text = self.font_tiny.render(quest['description'], True, GRAY)
-            screen.blit(desc_text, (50, y + 70))
+                    # Quest name
+                    name_text = self.font_medium.render(quest['name'], True, WHITE)
+                    screen.blit(name_text, (100, y))
 
-            # Reward
-            reward_text = self.font_tiny.render(f"Reward: {quest['reward']}", True, BLUE)
-            screen.blit(reward_text, (50, y + 90))
+                    # Progress
+                    current_progress = quest_progress.get(quest_key, 0)
+                    max_progress = quest['max_progress']
+                    percent = min(100, int((current_progress / max_progress) * 100))
+                    progress_text = self.font_small.render(f"Progress: {current_progress}/{max_progress} ({percent}%)", True, GRAY)
+                    screen.blit(progress_text, (100, y + 40))
 
-            y += 130
+                    # Status
+                    if current_progress >= max_progress:
+                        status_text = self.font_small.render("COMPLETED", True, GREEN)
+                    else:
+                        status_text = self.font_small.render("IN PROGRESS", True, YELLOW)
+                    screen.blit(status_text, (SCREEN_WIDTH - status_text.get_width() - 100, y + 20))
 
-        hint = self.font_tiny.render("Press Q to close | ESC to close", True, GRAY)
+                    # Description
+                    desc_text = self.font_tiny.render(quest['description'], True, GRAY)
+                    screen.blit(desc_text, (100, y + 70))
+
+                    y += 120
+
+        if self.quest_view_state == 1:
+            hint_text = "ESC/X/BACKSPACE: Back to Classes"
+        else:
+            hint_text = "ESC/X: Close Menu | ENTER: View Quests"
+            
+        hint = self.font_tiny.render(hint_text, True, GRAY)
         screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2, SCREEN_HEIGHT - 50))
 
     def draw_shop(self, screen, shop, currency):
@@ -624,7 +681,12 @@ class Player:
             'mage_crystals': 0,
             'archer_range_damage': 0,
             'rogue_laser_avoids': 0,
-            'reaver_low_hp_damage': 0
+            'reaver_low_hp_damage': 0,
+            'warrior_parries': 0,
+            'mage_mana_spent': 0,
+            'archer_crit_hits': 0,
+            'rogue_backstabs': 0,
+            'reaver_hp_siphoned': 0
         }
         self.laser_damage_taken = False
         self.consecutive_laser_avoids = 0
@@ -866,6 +928,7 @@ class Player:
         # Parry logic
         if self.parrying:
             final_damage //= 2
+            self.quest_progress['warrior_parries'] += 1
 
             # Warrior Parry effects
             if self.character_class == "Warrior":
@@ -893,12 +956,20 @@ class Player:
                 self.buffs["shield_stance"] = 480 # 8s
                 activated = True
         elif self.character_class == "Mage":
-            if index == 1:
-                self.buffs["arcane_surge"] = 360 # 6s
-                activated = True
-            elif index == 2:
-                self.buffs["elemental_shield"] = 300 # 5s
-                activated = True
+            mana_cost = 25
+            if self.mana >= mana_cost:
+                if index == 1:
+                    self.buffs["arcane_surge"] = 360 # 6s
+                    activated = True
+                elif index == 2:
+                    self.buffs["elemental_shield"] = 300 # 5s
+                    activated = True
+                
+                if activated:
+                    self.mana -= mana_cost
+                    self.quest_progress['mage_mana_spent'] += mana_cost
+            else:
+                return False # Not enough mana
         elif self.character_class == "Archer":
             if index == 1:
                 self.buffs["focus_shot"] = True
@@ -938,6 +1009,7 @@ class Player:
 
         if random.random() < crit_chance:
             final_damage *= 1.5
+            self.quest_progress['archer_crit_hits'] += 1
 
         if self.buffs["focus_shot"]:
             final_damage *= 1.4
@@ -949,6 +1021,7 @@ class Player:
                 # If player and target facing same way, it's from behind
                 if self.facing_right == target.facing_right:
                     final_damage *= 1.25
+                    self.quest_progress['rogue_backstabs'] += 1
 
             # Critical Timing: +15% damage on consecutive attacks (2s)
             if self.consecutive_attacks > 0:
@@ -970,6 +1043,7 @@ class Player:
 
         if heal_amount > 0:
             self.hp = min(self.max_hp, self.hp + heal_amount)
+            self.quest_progress['reaver_hp_siphoned'] += int(heal_amount)
 
         # Quest progress tracking
         if self.game:
@@ -1908,11 +1982,12 @@ class MiniBossManager:
 
 class Game:
     def __init__(self):
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN | pygame.SCALED)
         pygame.display.set_caption("Hollow Knight Boss Fight - Enhanced")
         self.clock = pygame.time.Clock()
         self.running = True
         self.state = GameState.MAIN_MENU
+        self.last_state = GameState.MAIN_MENU
         
         self.player = None
         self.boss = None
@@ -1944,6 +2019,19 @@ class Game:
         self.currency = 0  # Loaded from meta save
         self.total_damage_dealt = 0  # Runtime only - NOT saved
         self.unlocked_classes = set()  # Loaded from meta save
+        self.mastery_unlocks = set()   # Loaded from meta save
+        self.meta_quest_progress = {
+            'warrior_damage': 0,
+            'mage_crystals': 0,
+            'archer_range_damage': 0,
+            'rogue_laser_avoids': 0,
+            'reaver_low_hp_damage': 0,
+            'warrior_parries': 0,
+            'mage_mana_spent': 0,
+            'archer_crit_hits': 0,
+            'rogue_backstabs': 0,
+            'reaver_hp_siphoned': 0
+        }
 
         # Quest definitions
         self.quests = {
@@ -1981,6 +2069,41 @@ class Game:
                 'description': 'Deal 100 damage while under 50% HP',
                 'max_progress': 100,
                 'reward': 'Unlock Reaver class'
+            },
+            'warrior_parries': {
+                'name': 'Shield Master',
+                'class': 'Warrior',
+                'description': 'Successfully parry 10 attacks',
+                'max_progress': 10,
+                'reward': 'Warrior Mastery'
+            },
+            'mage_mana_spent': {
+                'name': 'Arcane Scholar',
+                'class': 'Mage',
+                'description': 'Spend 500 mana on abilities',
+                'max_progress': 500,
+                'reward': 'Mage Mastery'
+            },
+            'archer_crit_hits': {
+                'name': 'Eagle Eye',
+                'class': 'Archer',
+                'description': 'Land 20 critical hits',
+                'max_progress': 20,
+                'reward': 'Archer Mastery'
+            },
+            'rogue_backstabs': {
+                'name': 'Ghost Assassin',
+                'class': 'Rogue',
+                'description': 'Perform 50 backstab attacks',
+                'max_progress': 50,
+                'reward': 'Rogue Mastery'
+            },
+            'reaver_hp_siphoned': {
+                'name': 'Blood Drinker',
+                'class': 'Reaver',
+                'description': 'Siphon 200 total HP from enemies',
+                'max_progress': 200,
+                'reward': 'Reaver Mastery'
             }
         }
 
@@ -2046,10 +2169,14 @@ class Game:
     
     def load_meta_progression(self):
         """Load ONLY meta progression - never runtime state"""
-        meta_data = self.save_manager.load_meta_progression(self.shop.items)
-        if meta_data and isinstance(meta_data, dict):
+        result = self.save_manager.load_meta_progression(self.shop.items)
+        if result:
+            meta_data, unlocked_classes, mastery_unlocks = result
             self.currency = meta_data.get('total_credits', 0)
             self.unlocked_classes = unlocked_classes
+            self.mastery_unlocks = mastery_unlocks
+            self.selected_character = meta_data.get('last_selected_class', "Base")
+            self.meta_quest_progress.update(meta_data.get('quest_progress', {}))
             self.menu.show_notification(f"Meta progression loaded! Credits: {self.currency}")
         else:
             # No save exists - start fresh
@@ -2057,7 +2184,11 @@ class Game:
     
     def save_meta_progression(self):
         """Save ONLY meta progression - never runtime state"""
-        if self.save_manager.save_meta_progression(self.currency, self.shop.items, self.unlocked_classes):
+        # Sync current player quest progress to meta
+        if self.player:
+            self.meta_quest_progress.update(self.player.quest_progress)
+
+        if self.save_manager.save_meta_progression(self.currency, self.shop.items, self.unlocked_classes, self.meta_quest_progress, self.mastery_unlocks, self.selected_character):
             self.menu.show_notification("Progress saved!")
             return True
         else:
@@ -2102,6 +2233,7 @@ class Game:
         # Store class info in player for passives/buffs if needed
         self.player.character_class = self.selected_character
         self.player.game = self  # Reference to game for quest tracking
+        self.player.quest_progress.update(self.meta_quest_progress)
         
         self.boss = Boss()
         self.miniboss_manager = MiniBossManager()
@@ -2771,6 +2903,28 @@ class Game:
                 self.unlocked_classes.add('Reaver')
                 self.save_meta_progression()
 
+            # Check for mastery unlocks
+            if self.player.quest_progress['warrior_parries'] >= 10 and 'Warrior' not in self.mastery_unlocks:
+                self.mastery_unlocks.add('Warrior')
+                self.menu.show_notification("WARRIOR MASTERED!")
+                self.save_meta_progression()
+            if self.player.quest_progress['mage_mana_spent'] >= 500 and 'Mage' not in self.mastery_unlocks:
+                self.mastery_unlocks.add('Mage')
+                self.menu.show_notification("MAGE MASTERED!")
+                self.save_meta_progression()
+            if self.player.quest_progress['archer_crit_hits'] >= 20 and 'Archer' not in self.mastery_unlocks:
+                self.mastery_unlocks.add('Archer')
+                self.menu.show_notification("ARCHER MASTERED!")
+                self.save_meta_progression()
+            if self.player.quest_progress['rogue_backstabs'] >= 50 and 'Rogue' not in self.mastery_unlocks:
+                self.mastery_unlocks.add('Rogue')
+                self.menu.show_notification("ROGUE MASTERED!")
+                self.save_meta_progression()
+            if self.player.quest_progress['reaver_hp_siphoned'] >= 200 and 'Reaver' not in self.mastery_unlocks:
+                self.mastery_unlocks.add('Reaver')
+                self.menu.show_notification("REAVER MASTERED!")
+                self.save_meta_progression()
+
             # Reaver Crimson Aura check
             if self.player.character_class == "Reaver":
                 dist_to_boss = math.hypot(self.player.x - self.boss.x, self.player.y - self.boss.y)
@@ -2827,7 +2981,10 @@ class Game:
                         self.state = GameState.MAIN_MENU
                         self.menu.selected = 0
                     elif self.state == GameState.QUEST_MENU:
-                        self.state = GameState.PLAYING
+                        if self.menu.quest_view_state == 1:
+                            self.menu.quest_view_state = 0
+                        else:
+                            self.state = self.last_state
                     elif self.admin_login_mode:
                         self.admin_login_mode = False
                     elif self.admin_panel_active:
@@ -2890,6 +3047,11 @@ class Game:
                         elif option == "Shop":
                             self.state = GameState.SHOP
                             self.shop.selected_index = 0
+                        elif option == "Quests":
+                            self.last_state = self.state
+                            self.state = GameState.QUEST_MENU
+                            self.menu.quest_view_state = 0
+                            self.menu.selected = 0
                         elif option == "Settings":
                             self.state = GameState.SETTINGS
                             self.menu.selected = 0
@@ -2976,17 +3138,44 @@ class Game:
                         self.player.dash()
                     elif event.key == pygame.K_f:
                         self.player.parrying = True
-                    elif event.key == pygame.K_1:
+                    elif event.key == pygame.K_w:
                         self.player.activate_buff(1)
-                    elif event.key == pygame.K_2:
+                    elif event.key == pygame.K_c:
                         self.player.activate_buff(2)
                     elif event.key == pygame.K_x:
+                        self.last_state = self.state
                         self.state = GameState.QUEST_MENU
+                        self.menu.quest_view_state = 0
+                        self.menu.selected = 0
 
                 # Quest menu controls
                 elif self.state == GameState.QUEST_MENU:
-                    if event.key == pygame.K_x or event.key == pygame.K_ESCAPE:
-                        self.state = GameState.PLAYING
+                    if event.key == pygame.K_x:
+                        if self.menu.quest_view_state == 1:
+                            self.menu.quest_view_state = 0
+                        else:
+                            self.state = self.last_state
+                    
+                    elif self.menu.quest_view_state == 0:  # Class selection
+                        all_quest_classes = ["Warrior", "Mage", "Archer", "Rogue", "Reaver"]
+                        if event.key in [pygame.K_w, pygame.K_UP]:
+                            self.menu.selected = (self.menu.selected - 1) % len(all_quest_classes)
+                        elif event.key in [pygame.K_s, pygame.K_DOWN]:
+                            self.menu.selected = (self.menu.selected + 1) % len(all_quest_classes)
+                        elif event.key == pygame.K_RETURN:
+                            self.menu.selected_quest_class = all_quest_classes[self.menu.selected]
+                            self.menu.quest_view_state = 1
+                            self.menu.selected = 0
+                    
+                    elif self.menu.quest_view_state == 1:  # Quest list
+                        if event.key == pygame.K_BACKSPACE:
+                            self.menu.quest_view_state = 0
+                            # Reset selection to the class we were just looking at
+                            all_quest_classes = ["Warrior", "Mage", "Archer", "Rogue", "Reaver"]
+                            if self.menu.selected_quest_class in all_quest_classes:
+                                self.menu.selected = all_quest_classes.index(self.menu.selected_quest_class)
+                            else:
+                                self.menu.selected = 0
             
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_f and self.state == GameState.PLAYING and self.player:
@@ -3054,7 +3243,11 @@ class Game:
             self.menu.draw_character_selection(self.screen, self.unlocked_classes)
 
         elif self.state == GameState.QUEST_MENU:
-            self.menu.draw_quest_menu(self.screen, self.quests, self.player.quest_progress if self.player else {})
+            # Sync if player exists to show real-time progress
+            display_progress = self.meta_quest_progress
+            if self.player:
+                display_progress = self.player.quest_progress
+            self.menu.draw_quest_menu(self.screen, self.quests, display_progress, self.unlocked_classes, self.mastery_unlocks)
 
         elif self.state == GameState.PLAYING:
             # Draw game arena
