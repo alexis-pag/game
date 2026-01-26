@@ -1,0 +1,23 @@
+idee
+
+new class secret , supreme one
+
+some easter egg
+
+
+
+probleme a corriger
+
+ File "c:\Users\FA507\Desktop\game\game.py", line 3918, in <module>
+    game.run()
+    ~~~~~~~~^^
+  File "c:\Users\FA507\Desktop\game\game.py", line 3910, in run
+    self.update()
+    ~~~~~~~~~~~^^
+  File "c:\Users\FA507\Desktop\game\game.py", line 2942, in update
+    self.player.update(self.platforms, self.walls, self.temp_walls, self.fire_zones, mouse_pos, self.camera_x, self.camera_y, self)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\FA507\Desktop\game\game.py", line 961, in update
+    self.vel_x = speed
+                 ^^^^^
+UnboundLocalError: cannot access local variable 'speed' where it is not associated with a value
