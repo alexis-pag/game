@@ -388,6 +388,12 @@ class Menu:
                 "passives": ["Life Stealer: +5% HP recovered per attack", "Survivor's Instinct: Below 20 HP, +25% regen for 4s"],
                 "active_buffs": ["Siphon Strike: Heal 25% damage dealt for 5s", "Crimson Aura: 5 HP/s regen while enemies nearby"],
                 "hp_bonus": 0
+            },
+            "Supreme One": {
+                "base_hp": 150,
+                "passives": ["Supreme Hybrid: Combines reduced versions of all passives", "Divine Scaling: Power grows with survival and avoidance"],
+                "active_buffs": ["Omni-Presence: All buffs active at reduced capacity"],
+                "hp_bonus": 50
             }
         }
         
@@ -836,6 +842,11 @@ class Player:
         self.laser_damage_taken = False
         self.consecutive_laser_avoids = 0
         
+        # Scaling for Supreme One
+        self.bosses_defeated = 0
+        self.damage_avoided = 0
+        self.combat_survival_time = 0
+        
         # Buff timers (in frames)
         self.buffs = {
             "shield_stance": 0,
@@ -881,6 +892,15 @@ class Player:
             if self.buffs["crimson_aura"] > 0:
                 self.hp = min(self.max_hp, self.hp + 5 / 60)
                 self.buffs["crimson_aura"] -= 1
+        elif self.character_class == "Supreme One":
+            # Supreme One Hybrid Passives (Reduced)
+            # Mana regen (2.5%)
+            self.mana = min(self.max_mana, self.mana + (self.max_mana * 0.025) / 60)
+            # Agility (5%)
+            self.move_speed_bonus = 1.05
+            # Scaling: 1 HP per 1000 survival frames
+            self.hp = min(self.max_hp, self.hp + (self.combat_survival_time / 60000))
+            self.combat_survival_time += 1
 
         # Rogue consecutive attacks
         if self.consecutive_attack_timer > 0:
@@ -950,41 +970,41 @@ class Player:
             elif self.charging:
                 speed *= 0.25 if self.charge_percent >= self.max_charge else 0.5
             
-        # ZQSD controls (Q=left, D=right, S=fast fall)
-        ctrl = self.game.menu.get_controls() if hasattr(self, 'game') and self.game else None
-        
-        if ctrl:
-            if keys[ctrl['left']]:
-                self.vel_x = -speed
-                self.facing_right = False
-            if keys[ctrl['right']]:
-                self.vel_x = speed
-                self.facing_right = True
-            if keys[ctrl['down']]:
-                self.vel_y += self.gravity * 0.5  # Fast fall assistance
-        else:
-            # Fallback to hardcoded ZQSD
-            if keys[pygame.K_q]:
-                self.vel_x = -speed
-                self.facing_right = False
-            if keys[pygame.K_d]:
-                self.vel_x = speed
-                self.facing_right = True
-            if keys[pygame.K_s]:
-                self.vel_y += self.gravity * 0.5  # Fast fall assistance
-        
-        if self.on_wall and self.vel_y > 0:
-            self.vel_y += self.gravity * 0.3
-        else:
-            self.vel_y += self.gravity
-        
-        # Squash and stretch for jump/land
-        if not self.on_ground and self.vel_y < 0:  # Jumping
-            self.squash_stretch = 0.9
-        elif not self.on_ground and self.vel_y > 5:  # Falling fast
-            self.squash_stretch = 1.1
-        else:  # On ground or normal
-            self.squash_stretch += (1.0 - self.squash_stretch) * 0.2
+            # ZQSD controls (Q=left, D=right, S=fast fall)
+            ctrl = self.game.menu.get_controls() if hasattr(self, 'game') and self.game else None
+            
+            if ctrl:
+                if keys[ctrl['left']]:
+                    self.vel_x = -speed
+                    self.facing_right = False
+                if keys[ctrl['right']]:
+                    self.vel_x = speed
+                    self.facing_right = True
+                if keys[ctrl['down']]:
+                    self.vel_y += self.gravity * 0.5  # Fast fall assistance
+            else:
+                # Fallback to hardcoded ZQSD
+                if keys[pygame.K_q]:
+                    self.vel_x = -speed
+                    self.facing_right = False
+                if keys[pygame.K_d]:
+                    self.vel_x = speed
+                    self.facing_right = True
+                if keys[pygame.K_s]:
+                    self.vel_y += self.gravity * 0.5  # Fast fall assistance
+            
+            if self.on_wall and self.vel_y > 0:
+                self.vel_y += self.gravity * 0.3
+            else:
+                self.vel_y += self.gravity
+            
+            # Squash and stretch for jump/land
+            if not self.on_ground and self.vel_y < 0:  # Jumping
+                self.squash_stretch = 0.9
+            elif not self.on_ground and self.vel_y > 5:  # Falling fast
+                self.squash_stretch = 1.1
+            else:  # On ground or normal
+                self.squash_stretch += (1.0 - self.squash_stretch) * 0.2
         
         self.x += self.vel_x
         self.check_collision(platforms, walls, temp_walls, 'x')
@@ -1073,6 +1093,8 @@ class Player:
     
     def take_damage(self, amount, damage_type="normal", source=None):
         if self.invulnerable or self.buffs["evasive_roll"] > 0:
+            if self.character_class == "Supreme One":
+                self.damage_avoided += amount
             return 0
 
         final_damage = amount
@@ -1153,6 +1175,10 @@ class Player:
 
     def calculate_damage(self, base_amount, attack_type="melee", target=None):
         final_damage = base_amount
+        if self.character_class == "Supreme One":
+            # Dynamic scaling: +2% damage per boss defeated, +1% per 100 damage avoided
+            scaling_factor = 1.0 + (self.bosses_defeated * 0.02) + (self.damage_avoided / 10000)
+            final_damage *= scaling_factor
 
         # Warrior Berserk
         if self.buffs["berserk"] > 0 and attack_type == "melee":
@@ -2206,6 +2232,11 @@ class Game:
         self.particles = []
         self.screen_shake = 0
         
+        # Run timer
+        self.run_time = 0
+        self.start_ticks = 0
+        self.pause_start_ticks = 0
+        
         self.platforms = []
         self.walls = []
         self.setup_arena()
@@ -2466,6 +2497,8 @@ class Game:
         self.godmode = False
         self.boss_invincible = False
         self.paused = False
+        self.run_time = 0
+        self.start_ticks = pygame.time.get_ticks()
     
     def load_game(self):
         save_data = self.save_manager.load_game(self.shop.items)
@@ -2818,11 +2851,42 @@ class Game:
                 else:
                     self.admin_history.append("Boss already in Phase 2")
             
+            elif parts[0] == "class_get" and len(parts) >= 2:
+                cls_name = parts[1].capitalize()
+                if cls_name in ["Warrior", "Mage", "Archer", "Rogue", "Reaver", "Supreme One"]:
+                    self.unlocked_classes.add(cls_name)
+                    self.save_meta_progression()
+                    self.admin_history.append(f"Class {cls_name} unlocked")
+                else:
+                    self.admin_history.append(f"Unknown class: {cls_name}")
+            
+            elif parts[0] == "class_get_all":
+                for cls in ["Warrior", "Mage", "Archer", "Rogue", "Reaver", "Supreme One"]:
+                    self.unlocked_classes.add(cls)
+                self.save_meta_progression()
+                self.admin_history.append("All classes unlocked")
+            
+            elif parts[0] == "class_up" and len(parts) >= 2:
+                cls_name = parts[1].capitalize()
+                if cls_name in ["Warrior", "Mage", "Archer", "Rogue", "Reaver"]:
+                    self.mastery_unlocks.add(cls_name)
+                    self.save_meta_progression()
+                    self.admin_history.append(f"Class {cls_name} mastered")
+                else:
+                    self.admin_history.append(f"Unknown or invalid class for mastery: {cls_name}")
+            
+            elif parts[0] == "class_up_all":
+                for cls in ["Warrior", "Mage", "Archer", "Rogue", "Reaver"]:
+                    self.mastery_unlocks.add(cls)
+                self.save_meta_progression()
+                self.admin_history.append("All classes mastered")
+            
             # Help command
             elif parts[0] == "help":
                 self.admin_history.append("=== ADMIN COMMANDS ===")
                 self.admin_history.append("PLAYER: godmode, set hp/max_hp/speed/jump/dash")
                 self.admin_history.append("tp <x> <y>, heal, reset_player, parry, charge")
+                self.admin_history.append("CLASS: class_get, class_get_all, class_up, class_up_all")
                 self.admin_history.append("BOSS: kill boss, boss_hp, boss phase1/phase2")
                 self.admin_history.append("boss reset, boss teleport, boss invincible")
                 self.admin_history.append("boss fireball/laser/shockwave/summon_minions")
@@ -2913,6 +2977,8 @@ class Game:
         
         if self.paused or self.state != GameState.PLAYING:
             return
+            
+        self.run_time = pygame.time.get_ticks() - self.start_ticks
             
         # Update particles
         for p in self.particles[:]:
@@ -3167,8 +3233,17 @@ class Game:
                 self.menu.show_notification("REAVER MASTERED!")
                 self.save_meta_progression()
 
+            # Secret Class: Supreme One Unlock Logic
+            if 'Supreme One' not in self.unlocked_classes:
+                all_unlocked = all(cls in self.unlocked_classes for cls in ["Warrior", "Mage", "Archer", "Rogue", "Reaver"])
+                all_mastered = all(cls in self.mastery_unlocks for cls in ["Warrior", "Mage", "Archer", "Rogue", "Reaver"])
+                if all_unlocked and all_mastered:
+                    self.unlocked_classes.add('Supreme One')
+                    self.menu.show_notification("You were never meant to find this.")
+                    self.save_meta_progression()
+
             # Reaver Crimson Aura check
-            if self.player.character_class == "Reaver":
+            if self.player and self.player.character_class == "Reaver":
                 dist_to_boss = math.hypot(self.player.x - self.boss.x, self.player.y - self.boss.y)
                 if dist_to_boss < 300:
                     self.player.buffs["crimson_aura"] = 2
@@ -3193,6 +3268,7 @@ class Game:
             elif self.boss.hp <= 0:
                 self.state = GameState.VICTORY
                 self.currency += 1000  # Victory reward
+                self.player.bosses_defeated += 1
                 # Auto-save meta progression on victory
                 self.save_meta_progression()
     
@@ -3391,6 +3467,16 @@ class Game:
                 # Character Selection
                 elif self.state == GameState.CHARACTER_SELECT:
                     available_classes = ["Base"] + [cls for cls in self.menu.character_options if cls in self.unlocked_classes]
+                    
+                    # Hidden selection logic for Supreme One
+                    mods = pygame.key.get_mods()
+                    if (mods & pygame.KMOD_SHIFT) and event.key == pygame.K_s and 'Supreme One' in self.unlocked_classes:
+                        self.selected_character = "Supreme One"
+                        self.menu.show_notification("SUPREME ONE SELECTED")
+                        self.save_meta_progression()
+                        self.start_game()
+                        return
+
                     if event.key in [pygame.K_w, pygame.K_z, pygame.K_s, pygame.K_UP, pygame.K_DOWN]:
                         direction = -1 if event.key in [pygame.K_w, pygame.K_z, pygame.K_UP] else 1
                         self.menu.selected = (self.menu.selected + direction) % len(available_classes)
@@ -3747,6 +3833,17 @@ class Game:
             currency_text = self.menu.font_small.render(f"Currency: {self.currency}", True, YELLOW)
             self.screen.blit(currency_text, (10, 10))
             
+            # Run Timer
+            seconds = (self.run_time // 1000) % 60
+            minutes = (self.run_time // 60000) % 60
+            hours = (self.run_time // 3600000)
+            if hours > 0:
+                timer_str = f"Time: {hours:02}:{minutes:02}:{seconds:02}"
+            else:
+                timer_str = f"Time: {minutes:02}:{seconds:02}"
+            timer_text = self.menu.font_small.render(timer_str, True, WHITE)
+            self.screen.blit(timer_text, (SCREEN_WIDTH - timer_text.get_width() - 10, 10))
+            
             # Platform hazard warning (Phase 2)
             if self.platform_hazard_active and self.boss and self.boss.phase == 2:
                 if not self.platforms_visible:
@@ -3833,17 +3930,33 @@ class Game:
         
         elif self.state == GameState.GAME_OVER:
             text = self.menu.font_large.render("GAME OVER", True, RED)
+            
+            seconds = (self.run_time // 1000) % 60
+            minutes = (self.run_time // 60000) % 60
+            hours = (self.run_time // 3600000)
+            time_str = f"Final Time: {hours:02}:{minutes:02}:{seconds:02}" if hours > 0 else f"Final Time: {minutes:02}:{seconds:02}"
+            time_text = self.menu.font_medium.render(time_str, True, WHITE)
+            
             restart = self.menu.font_medium.render("PRESS ENTER TO CONTINUE", True, WHITE)
-            self.screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 250))
-            self.screen.blit(restart, (SCREEN_WIDTH // 2 - restart.get_width() // 2, 400))
+            self.screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 200))
+            self.screen.blit(time_text, (SCREEN_WIDTH // 2 - time_text.get_width() // 2, 300))
+            self.screen.blit(restart, (SCREEN_WIDTH // 2 - restart.get_width() // 2, 450))
         
         elif self.state == GameState.VICTORY:
             text = self.menu.font_large.render("VICTORY!", True, GREEN)
+            
+            seconds = (self.run_time // 1000) % 60
+            minutes = (self.run_time // 60000) % 60
+            hours = (self.run_time // 3600000)
+            time_str = f"Clear Time: {hours:02}:{minutes:02}:{seconds:02}" if hours > 0 else f"Clear Time: {minutes:02}:{seconds:02}"
+            time_text = self.menu.font_medium.render(time_str, True, WHITE)
+            
             reward = self.menu.font_medium.render("+1000 Currency", True, YELLOW)
             restart = self.menu.font_medium.render("PRESS ENTER TO CONTINUE", True, WHITE)
-            self.screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 200))
-            self.screen.blit(reward, (SCREEN_WIDTH // 2 - reward.get_width() // 2, 300))
-            self.screen.blit(restart, (SCREEN_WIDTH // 2 - restart.get_width() // 2, 400))
+            self.screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 150))
+            self.screen.blit(time_text, (SCREEN_WIDTH // 2 - time_text.get_width() // 2, 250))
+            self.screen.blit(reward, (SCREEN_WIDTH // 2 - reward.get_width() // 2, 350))
+            self.screen.blit(restart, (SCREEN_WIDTH // 2 - restart.get_width() // 2, 500))
         
         # Admin login screen
         if self.admin_login_mode:
@@ -3916,3 +4029,4 @@ class Game:
 if __name__ == "__main__":
     game = Game()
     game.run()
+      
