@@ -350,7 +350,7 @@ class Menu:
         self.rebind_options = list(self.custom_controls.keys())
         self.binding_mode = False
         self.binding_action = None
-        self.character_options = ["Warrior", "Mage", "Archer", "Rogue", "Reaver"]
+        self.character_options = ["Warrior", "Mage", "Archer", "Rogue", "Reaver", "Supreme One"]
         
         self.character_stats = {
             "Base": {
@@ -478,7 +478,7 @@ class Menu:
         screen.fill(BLACK)
         self.menu_rects = []
         
-        title = self.font_large.render("HOLLOW KNIGHT BOSS FIGHT", True, PURPLE)
+        title = self.font_large.render("BOSS FIGHT", True, PURPLE)
         screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
         
         y = 300
@@ -593,7 +593,7 @@ class Menu:
         hint = self.font_tiny.render("Navigate: Arrow Keys | Select: Enter | Back: ESC", True, GRAY)
         screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2, SCREEN_HEIGHT - 50))
 
-    def draw_quest_menu(self, screen, quests, quest_progress, unlocked_classes, mastery_unlocks=None):
+    def draw_quest_menu(self, screen, quests, quest_progress, unlocked_classes, mastery_unlocks=None, shop_items=None):
         screen.fill(BLACK)
         self.menu_rects = []
         if mastery_unlocks is None:
@@ -607,7 +607,7 @@ class Menu:
             subtitle = self.font_medium.render("Select a Class to View Quests", True, YELLOW)
             screen.blit(subtitle, (SCREEN_WIDTH // 2 - subtitle.get_width() // 2, 120))
             
-            all_quest_classes = ["Warrior", "Mage", "Archer", "Rogue", "Reaver"]
+            all_quest_classes = ["Warrior", "Mage", "Archer", "Rogue", "Reaver", "Supreme One"]
             y = 200
             for i, cls in enumerate(all_quest_classes):
                 is_selected = i == self.selected
@@ -641,8 +641,34 @@ class Menu:
             
             y = 200
             if not class_quests:
-                msg = self.font_small.render("No quests available for this class.", True, GRAY)
-                screen.blit(msg, (SCREEN_WIDTH // 2 - msg.get_width() // 2, y))
+                if self.selected_quest_class == "Supreme One":
+                    # Custom progress display for Supreme One
+                    classes = ["Warrior", "Mage", "Archer", "Rogue", "Reaver"]
+                    unlocked_count = sum(1 for cls in classes if cls in unlocked_classes)
+                    mastered_count = sum(1 for cls in classes if cls in (mastery_unlocks or []))
+                    
+                    # Background for progress
+                    pygame.draw.rect(screen, DARK_GRAY, (80, y - 10, SCREEN_WIDTH - 160, 200))
+                    pygame.draw.rect(screen, PURPLE, (80, y - 10, SCREEN_WIDTH - 160, 200), 2)
+                    
+                    title = self.font_medium.render("The Ultimate Trial", True, WHITE)
+                    screen.blit(title, (100, y))
+                    
+                    unlocked_text = self.font_small.render(f"Classes Unlocked: {unlocked_count}/5", True, WHITE if unlocked_count == 5 else GRAY)
+                    screen.blit(unlocked_text, (100, y + 50))
+                    
+                    mastered_text = self.font_small.render(f"Classes Mastered: {mastered_count}/5", True, GOLD if mastered_count == 5 else GRAY)
+                    screen.blit(mastered_text, (100, y + 90))
+                    
+                    requirement = self.font_tiny.render("Unlock and Master all five base classes to transcend.", True, PURPLE)
+                    screen.blit(requirement, (100, y + 140))
+                    
+                    if unlocked_count == 5 and mastered_count == 5:
+                        status = self.font_medium.render("SUPREME ONE OBTAINED", True, GREEN)
+                        screen.blit(status, (SCREEN_WIDTH - status.get_width() - 100, y + 80))
+                else:
+                    msg = self.font_small.render("No quests available for this class.", True, GRAY)
+                    screen.blit(msg, (SCREEN_WIDTH // 2 - msg.get_width() // 2, y))
             else:
                 for quest_key, quest in class_quests.items():
                     # Background for each quest
@@ -846,6 +872,11 @@ class Player:
         self.bosses_defeated = 0
         self.damage_avoided = 0
         self.combat_survival_time = 0
+        self.damage_taken_total = 0
+        self.supreme_cooldowns = {"W": 0, "C": 0, "V": 0, "F": 0, "E": 0}
+        self.supreme_cooldowns_max = {"W": 600, "C": 180, "V": 420, "F": 120, "E": 1800}
+        self.cc_resistance = 0.0
+        self.game = None # Set by Game instance
         
         # Buff timers (in frames)
         self.buffs = {
@@ -873,6 +904,7 @@ class Player:
     
     def update(self, platforms, walls, temp_walls, fire_zones, mouse_pos, camera_x, camera_y, game_instance=None):
         keys = pygame.key.get_pressed()
+        self.game = game_instance
         
         self.animation_timer += 1
         
@@ -893,14 +925,32 @@ class Player:
                 self.hp = min(self.max_hp, self.hp + 5 / 60)
                 self.buffs["crimson_aura"] -= 1
         elif self.character_class == "Supreme One":
-            # Supreme One Hybrid Passives (Reduced)
-            # Mana regen (2.5%)
-            self.mana = min(self.max_mana, self.mana + (self.max_mana * 0.025) / 60)
-            # Agility (5%)
-            self.move_speed_bonus = 1.05
-            # Scaling: 1 HP per 1000 survival frames
-            self.hp = min(self.max_hp, self.hp + (self.combat_survival_time / 60000))
+            # Supreme Hybrid (Reduced Class Passives)
+            self.mana = min(self.max_mana, self.mana + (self.max_mana * 0.03) / 60)
+            self.move_speed_bonus = 1.08
+            self.crit_chance = 0.10
+            
+            # Adaptive Scaling: Power grows with survival and efficiency
+            evasion_ratio = self.damage_avoided / (max(1, self.damage_taken_total) * 0.1)
+            self.external_slow = max(0.2, 1.0 - (self.cc_resistance))
+            
+            # Ascendant Vitality: Permanent regen increasing at low HP
+            missing_hp_ratio = 1.0 - (self.hp / self.max_hp)
+            regen_base = 1.0 / 60
+            regen_boost = (missing_hp_ratio * 10.0) / 60
+            self.hp = min(self.max_hp, self.hp + regen_base + regen_boost)
+            
+            # Unstoppable Will: Progressive resistance to CC
+            self.cc_resistance = min(0.8, self.cc_resistance + 0.0001)
+            
+            # Chronos Mastery: Power scaling with time
             self.combat_survival_time += 1
+            time_multiplier = 1.0 + (self.combat_survival_time / 36000) # +10% per min
+            
+            # Handle Supreme Cooldowns
+            for key in self.supreme_cooldowns:
+                if self.supreme_cooldowns[key] > 0:
+                    self.supreme_cooldowns[key] -= 1
 
         # Rogue consecutive attacks
         if self.consecutive_attack_timer > 0:
@@ -1119,6 +1169,10 @@ class Player:
                     source.take_damage(amount * 0.2) # Counter Strike
 
         self.hp -= final_damage
+        
+        if self.character_class == "Supreme One":
+            self.damage_taken_total += final_damage
+            self.cc_resistance = max(0, self.cc_resistance - 0.05) # Hits reduce CC resistance slightly
 
         # Quest tracking for Rogue: laser damage
         if damage_type == "magic":
@@ -1217,6 +1271,70 @@ class Player:
             self.consecutive_attack_timer = 120 # 2s
 
         return final_damage
+
+    def activate_supreme_ability(self, key, mouse_pos=None):
+        if self.character_class != "Supreme One" or self.supreme_cooldowns[key] > 0:
+            return False
+        
+        mana_costs = {"W": 40, "C": 20, "V": 30, "F": 15, "E": 0}
+        if self.mana < mana_costs[key]:
+            return False
+            
+        success = False
+        if key == "W": # Omni-Burst: High focus burst mode
+            self.buffs["arcane_surge"] = 420
+            self.buffs["berserk"] = 420
+            self.buffs["shadow_dash"] = 120
+            success = True
+        
+        elif key == "C": # Dimensional Shift: Short teleport/evasion
+            if mouse_pos:
+                old_x, old_y = self.x, self.y
+                self.x, self.y = mouse_pos[0], mouse_pos[1]
+                self.invulnerable = True
+                self.buffs["evasive_roll"] = 30
+                if self.game:
+                    self.game.create_particles(old_x, old_y, PURPLE)
+                    self.game.create_particles(self.x, self.y, GOLD)
+                success = True
+        
+        elif key == "V": # Gravitational Singularity: Area control/knockback
+            if self.game and self.game.boss:
+                dist = math.hypot(self.x - self.game.boss.x, self.y - self.game.boss.y)
+                if dist < 400:
+                    # Hybrid damage and massive knockback
+                    dmg = self.calculate_damage(15, "magic", self.game.boss)
+                    self.game.boss.take_damage(dmg)
+                    angle = math.atan2(self.game.boss.y - self.y, self.game.boss.x - self.x)
+                    self.game.boss.vel_x += math.cos(angle) * 15
+                    self.game.boss.vel_y -= 10
+                    self.game.create_particles(self.x, self.y, DARK_PURPLE)
+                    success = True
+        
+        elif key == "F": # Shatter-Strike: Melee + Shockwave
+            if self.game and self.game.boss:
+                dist = math.hypot(self.x - self.game.boss.x, self.y - self.game.boss.y)
+                if dist < 150:
+                    dmg = self.calculate_damage(25, "melee", self.game.boss)
+                    self.game.boss.take_damage(dmg)
+                    self.game.create_particles(self.game.boss.x, self.game.boss.y, WHITE)
+                    success = True
+        
+        elif key == "E": # Celestial Wrath: Avoidance-triggered powerful attack
+            # Can only be used if avoidance is high
+            if self.damage_avoided >= 500:
+                if self.game and self.game.boss:
+                    dmg = self.calculate_damage(80, "magic", self.game.boss)
+                    self.game.boss.take_damage(dmg)
+                    self.damage_avoided -= 500
+                    self.game.create_particles(self.game.boss.x, self.game.boss.y, GOLD)
+                    success = True
+            
+        if success:
+            self.mana -= mana_costs[key]
+            self.supreme_cooldowns[key] = self.supreme_cooldowns_max[key]
+            return True
+        return False
 
     def on_deal_damage(self, amount):
         heal_amount = 0
@@ -3239,7 +3357,7 @@ class Game:
                 all_mastered = all(cls in self.mastery_unlocks for cls in ["Warrior", "Mage", "Archer", "Rogue", "Reaver"])
                 if all_unlocked and all_mastered:
                     self.unlocked_classes.add('Supreme One')
-                    self.menu.show_notification("You were never meant to find this.")
+                    self.menu.show_notification("SUPREME ONE UNLOCKED!")
                     self.save_meta_progression()
 
             # Reaver Crimson Aura check
@@ -3275,7 +3393,7 @@ class Game:
     def back_to_quest_classes(self):
         self.menu.quest_view_state = 0
         # Reset selection to the class we were just looking at
-        all_quest_classes = ["Warrior", "Mage", "Archer", "Rogue", "Reaver"]
+        all_quest_classes = ["Warrior", "Mage", "Archer", "Rogue", "Reaver", "Supreme One"]
         if self.menu.selected_quest_class in all_quest_classes:
             self.menu.selected = all_quest_classes.index(self.menu.selected_quest_class)
         else:
@@ -3346,7 +3464,7 @@ class Game:
         
         elif self.state == GameState.QUEST_MENU:
             if self.menu.quest_view_state == 0:
-                all_quest_classes = ["Warrior", "Mage", "Archer", "Rogue", "Reaver"]
+                all_quest_classes = ["Warrior", "Mage", "Archer", "Rogue", "Reaver", "Supreme One"]
                 if self.menu.selected < len(all_quest_classes):
                     self.menu.selected_quest_class = all_quest_classes[self.menu.selected]
                     self.menu.quest_view_state = 1
@@ -3575,6 +3693,23 @@ class Game:
                         self.state = GameState.QUEST_MENU
                         self.menu.quest_view_state = 0
                         self.menu.selected = 0
+                    
+                    # Supreme One Specific Keys
+                    if self.player.character_class == "Supreme One":
+                        mouse_pos = pygame.mouse.get_pos()
+                        # Convert screen mouse to map mouse
+                        map_mouse = (mouse_pos[0] + self.camera_x, mouse_pos[1] + self.camera_y)
+                        
+                        if event.key == pygame.K_w:
+                            self.player.activate_supreme_ability("W")
+                        elif event.key == pygame.K_c:
+                            self.player.activate_supreme_ability("C", map_mouse)
+                        elif event.key == pygame.K_v:
+                            self.player.activate_supreme_ability("V")
+                        elif event.key == pygame.K_f:
+                            self.player.activate_supreme_ability("F")
+                        elif event.key == pygame.K_e:
+                            self.player.activate_supreme_ability("E")
 
                 # Quest menu controls
                 elif self.state == GameState.QUEST_MENU:
@@ -3752,7 +3887,7 @@ class Game:
             display_progress = self.meta_quest_progress
             if self.player:
                 display_progress = self.player.quest_progress
-            self.menu.draw_quest_menu(self.screen, self.quests, display_progress, self.unlocked_classes, self.mastery_unlocks)
+            self.menu.draw_quest_menu(self.screen, self.quests, display_progress, self.unlocked_classes, self.mastery_unlocks, self.shop.items)
 
         elif self.state == GameState.PLAYING:
             # Draw particles first (behind entities)
