@@ -1,0 +1,42 @@
+{
+    "total_credits": 6742.0,
+    "owned_items": [
+        {
+            "name": "Armor Lv5",
+            "type": "armor",
+            "level": 5,
+            "equipped": true
+        },
+        {
+            "name": "Sword Lv5",
+            "type": "sword",
+            "level": 5,
+            "equipped": true
+        }
+    ],
+    "highest_armor_tier": 5,
+    "highest_weapon_tier": 5,
+    "default_armor": "Armor Lv5",
+    "default_weapon": "Sword Lv5",
+    "unlocked_classes": [
+        "Reaver",
+        "Warrior"
+    ],
+    "mastery_unlocks": [],
+    "quest_progress": {
+        "warrior_damage": 1267.0,
+        "mage_crystals": 3,
+        "archer_range_damage": 0,
+        "rogue_laser_avoids": 0,
+        "reaver_low_hp_damage": 484.0,
+        "warrior_parries": 0,
+        "mage_mana_spent": 0,
+        "archer_crit_hits": 4,
+        "rogue_backstabs": 0,
+        "reaver_hp_siphoned": 0
+    },
+    "last_selected_class": "Base",
+    "control_scheme": 0,
+    "custom_controls": null,
+    "unlocked_boss_phases": []
+}

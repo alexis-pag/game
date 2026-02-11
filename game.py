@@ -23,6 +23,182 @@ BLUE = (100, 149, 237)
 GRAY = (128, 128, 128)
 DARK_GRAY = (50, 50, 50)
 GOLD = (255, 215, 0)
+CYAN = (0, 255, 255)
+BROWN = (139, 69, 19)
+POISON_GREEN = (173, 255, 47)
+DARK_BLUE = (0, 0, 139)
+LAVA_RED = (207, 16, 32)
+NATURE_GREEN = (34, 139, 34)
+LIGHT_YELLOW = (255, 255, 224)
+BEIGE = (245, 245, 220)
+
+class BossType(Enum):
+    # 1. Classic Elements
+    FIRE = "Fire"
+    WATER = "Water"
+    ICE = "Ice"
+    EARTH = "Earth"
+    WIND = "Wind"
+    LIGHTNING = "Lightning"
+
+    # 2. Advanced Natural Elements
+    NATURE = "Nature"
+    PLANT = "Plant"
+    WOOD = "Wood"
+    STONE = "Stone"
+    SAND = "Sand"
+    MUD = "Mud"
+    METAL = "Metal"
+    CRYSTAL = "Crystal"
+    MAGMA = "Magma"
+    LAVA = "Lava"
+    STEAM = "Steam"
+    ASH = "Ash"
+    SNOW = "Snow"
+    BLACK_ICE = "Black Ice"
+
+    # 3. Atmospheric & Weather Elements
+    STORM = "Storm"
+    THUNDERSTORM = "Thunderstorm"
+    FOG = "Fog"
+    RAIN = "Rain"
+    HAIL = "Hail"
+    BLIZZARD = "Blizzard"
+    HEATWAVE = "Heatwave"
+    DROUGHT = "Drought"
+    HURRICANE = "Hurricane"
+
+    # 4. Toxic & Biological Elements
+    POISON = "Poison"
+    VENOM = "Venom"
+    ACID = "Acid"
+    INFECTION = "Infection"
+    DISEASE = "Disease"
+    SPORE = "Spore"
+    RADIATION = "Radiation"
+    PARASITE = "Parasite"
+    CORRUPTION = "Corruption"
+
+    # 5. Dark & Occult Elements
+    DARK = "Dark"
+    SHADOW = "Shadow"
+    DARKNESS = "Darkness"
+    VOID = "Void"
+    EMPTINESS = "Emptiness"
+    CHAOS = "Chaos"
+    CURSE = "Curse"
+    BLOOD = "Blood"
+    SIN = "Sin"
+    FEAR = "Fear"
+
+    # 6. Light & Sacred Elements
+    LIGHT = "Light"
+    SACRED = "Sacred"
+    DIVINE = "Divine"
+    ASTRAL = "Astral"
+    CELESTIAL = "Celestial"
+    PURITY = "Purity"
+    ORDER = "Order"
+    FAITH = "Faith"
+
+    # 7. Magical & Energy Elements
+    MANA = "Mana"
+    ARCANE = "Arcane"
+    ENERGY = "Energy"
+    AETHER = "Aether"
+    ESSENCE = "Essence"
+    SPIRITUAL = "Spiritual"
+    PSIONIC = "Psionic"
+    ILLUSION = "Illusion"
+    ENCHANTMENT = "Enchantment"
+    RUNES = "Runes"
+
+    # 8. Temporal & Dimensional Elements
+    TIME = "Time"
+    CHRONO = "Chrono"
+    ACCELERATION = "Acceleration"
+    SLOWDOWN = "Slowdown"
+    STASIS = "Stasis"
+    DIMENSION = "Dimension"
+    DISTORTION = "Distortion"
+    TELEPORTATION = "Teleportation"
+    PARADOX = "Paradox"
+
+    # 9. Spatial & Cosmic Elements
+    SPACE = "Space"
+    GRAVITY = "Gravity"
+    ANTI_GRAVITY = "Anti-Gravity"
+    VACUUM = "Vacuum"
+    STAR = "Star"
+    SOLAR = "Solar"
+    LUNAR = "Lunar"
+    COSMIC = "Cosmic"
+    METEOR = "Meteor"
+    BLACK_HOLE = "Black Hole"
+
+    # 10. Technological & Artificial Elements
+    MECHANICAL = "Mechanical"
+    ROBOTIC = "Robotic"
+    CYBER = "Cyber"
+    ELECTRONIC = "Electronic"
+    LASER = "Laser"
+    PLASMA = "Plasma"
+    NANOTECHNOLOGY = "Nanotechnology"
+    AI = "AI"
+    DRONE = "Drone"
+    WEAPONRY = "Weaponry"
+
+    # 11. Psychological & Mental Elements
+    MIND = "Mind"
+    MENTAL = "Mental"
+    PSYCHIC = "Psychic"
+    CONTROL = "Control"
+    HYPNOSIS = "Hypnosis"
+    CONFUSION = "Confusion"
+    MADNESS = "Madness"
+    HALLUCINATION = "Hallucination"
+    TERROR = "Terror"
+
+    # 12. Physical & Abstract Elements
+    STRENGTH = "Strength"
+    IMPACT = "Impact"
+    SHOCKWAVE = "Shockwave"
+    VIBRATION = "Vibration"
+    PRESSURE = "Pressure"
+    SILENCE = "Silence"
+    SOUND = "Sound"
+    RESONANCE = "Resonance"
+    INERTIA = "Inertia"
+
+    # 13. Beast & Primal Elements
+    BEAST = "Beast"
+    WILD = "Wild"
+    RAGE = "Rage"
+    INSTINCT = "Instinct"
+    PRIMAL = "Primal"
+    TOTEM = "Totem"
+    SHAMANIC = "Shamanic"
+
+    # 14. Symbolic / Conceptual Elements
+    DEATH = "Death"
+    LIFE = "Life"
+    REBIRTH = "Rebirth"
+    DESTRUCTION = "Destruction"
+    CREATION = "Creation"
+    BALANCE = "Balance"
+    DESPAIR = "Despair"
+    WILL = "Will"
+    DESTINY = "Destiny"
+
+    # 15. Hybrid Elements
+    FIRE_SHADOW = "Fire + Shadow"
+    ICE_WIND = "Ice + Wind"
+    POISON_NATURE = "Poison + Nature"
+    LIGHT_TIME = "Light + Time"
+    CHAOS_MAGIC = "Chaos + Magic"
+    TECH_ENERGY = "Technology + Energy"
+    BLOOD_CORRUPTION = "Blood + Corruption"
+    GRAVITY_DARKNESS = "Gravity + Darkness"
 
 class GameState(Enum):
     MAIN_MENU = 0
@@ -36,6 +212,195 @@ class GameState(Enum):
     CHARACTER_SELECT = 8
     QUEST_MENU = 9
     REBIND_KEYS = 10
+    MODE_SELECT = 11
+    DRAGON_FIGHT = 12
+    BOSS_SELECT = 13
+
+
+class ProjectileType(Enum):
+    FIRE = "fire"
+    WATER = "water"
+    ICE = "ice"
+    EARTH = "earth"
+    WIND = "wind"
+    LIGHTNING = "lightning"
+    POISON = "poison"
+    DARK = "dark"
+    LIGHT = "light"
+    NATURE = "nature"
+    LAVA = "lava"
+    METAL = "metal"
+    CRYSTAL = "crystal"
+    GRAVITY = "gravity"
+    TIME = "time"
+    SPACE = "space"
+    TECH = "tech"
+    PLASMA = "plasma"
+    BIO = "bio"
+    CURSE = "curse"
+    MAGIC = "magic"
+    SOUND = "sound"
+    SPIRIT = "spirit"
+    COSMIC = "cosmic"
+    CHARGED_ATTACK = "charged_attack"
+    SHOCKWAVE = "shockwave"
+    LASER_BLAST = "laser_blast"
+
+# Boss attack configurations and colors for all elements
+BOSS_DATA = {
+    # 1. Classic Elements
+    BossType.FIRE: {"color": RED, "proj": ProjectileType.FIRE, "debuff": "burn"},
+    BossType.WATER: {"color": BLUE, "proj": ProjectileType.WATER, "debuff": "slow"},
+    BossType.ICE: {"color": CYAN, "proj": ProjectileType.ICE, "debuff": "slow"},
+    BossType.EARTH: {"color": BROWN, "proj": ProjectileType.EARTH, "debuff": "stun"},
+    BossType.WIND: {"color": WHITE, "proj": ProjectileType.WIND, "debuff": "slow"},
+    BossType.LIGHTNING: {"color": YELLOW, "proj": ProjectileType.LIGHTNING, "debuff": "stun"},
+    # 2. Advanced Natural
+    BossType.NATURE: {"color": NATURE_GREEN, "proj": ProjectileType.NATURE, "debuff": "root"},
+    BossType.PLANT: {"color": NATURE_GREEN, "proj": ProjectileType.NATURE, "debuff": "root"},
+    BossType.WOOD: {"color": (101, 67, 33), "proj": ProjectileType.NATURE, "debuff": "root"},
+    BossType.STONE: {"color": GRAY, "proj": ProjectileType.EARTH, "debuff": "stun"},
+    BossType.SAND: {"color": (194, 178, 128), "proj": ProjectileType.EARTH, "debuff": "blind"},
+    BossType.MUD: {"color": (75, 54, 33), "proj": ProjectileType.BIO, "debuff": "slow"},
+    BossType.METAL: {"color": (176, 191, 197), "proj": ProjectileType.METAL, "debuff": "slow"},
+    BossType.CRYSTAL: {"color": (162, 210, 255), "proj": ProjectileType.CRYSTAL, "debuff": "stun"},
+    BossType.MAGMA: {"color": (255, 69, 0), "proj": ProjectileType.LAVA, "debuff": "burn"},
+    BossType.LAVA: {"color": LAVA_RED, "proj": ProjectileType.LAVA, "debuff": "burn"},
+    BossType.STEAM: {"color": (224, 224, 224), "proj": ProjectileType.WATER, "debuff": "blind"},
+    BossType.ASH: {"color": (105, 105, 105), "proj": ProjectileType.FIRE, "debuff": "blind"},
+    BossType.SNOW: {"color": (255, 250, 250), "proj": ProjectileType.ICE, "debuff": "slow"},
+    BossType.BLACK_ICE: {"color": (20, 20, 40), "proj": ProjectileType.ICE, "debuff": "slow"},
+    # 3. Atmospheric
+    BossType.STORM: {"color": (75, 0, 130), "proj": ProjectileType.LIGHTNING, "debuff": "stun"},
+    BossType.THUNDERSTORM: {"color": (25, 25, 112), "proj": ProjectileType.LIGHTNING, "debuff": "stun"},
+    BossType.FOG: {"color": (211, 211, 211), "proj": ProjectileType.WIND, "debuff": "blind"},
+    BossType.RAIN: {"color": (0, 0, 128), "proj": ProjectileType.WATER, "debuff": "slow"},
+    BossType.HAIL: {"color": (240, 248, 255), "proj": ProjectileType.ICE, "debuff": "stun"},
+    BossType.BLIZZARD: {"color": (175, 238, 238), "proj": ProjectileType.ICE, "debuff": "slow"},
+    BossType.HEATWAVE: {"color": (255, 140, 0), "proj": ProjectileType.FIRE, "debuff": "burn"},
+    BossType.DROUGHT: {"color": (210, 180, 140), "proj": ProjectileType.EARTH, "debuff": "slow"},
+    BossType.HURRICANE: {"color": (70, 130, 180), "proj": ProjectileType.WIND, "debuff": "slow"},
+    # 4. Toxic
+    BossType.POISON: {"color": POISON_GREEN, "proj": ProjectileType.POISON, "debuff": "poison"},
+    BossType.VENOM: {"color": (127, 255, 0), "proj": ProjectileType.POISON, "debuff": "poison"},
+    BossType.ACID: {"color": (191, 255, 0), "proj": ProjectileType.POISON, "debuff": "burn"},
+    BossType.INFECTION: {"color": (139, 69, 19), "proj": ProjectileType.BIO, "debuff": "poison"},
+    BossType.DISEASE: {"color": (107, 142, 35), "proj": ProjectileType.BIO, "debuff": "slow"},
+    BossType.SPORE: {"color": (154, 205, 50), "proj": ProjectileType.BIO, "debuff": "root"},
+    BossType.RADIATION: {"color": (57, 255, 20), "proj": ProjectileType.BIO, "debuff": "burn"},
+    BossType.PARASITE: {"color": (139, 0, 0), "proj": ProjectileType.BIO, "debuff": "poison"},
+    BossType.CORRUPTION: {"color": (128, 0, 128), "proj": ProjectileType.BIO, "debuff": "blind"},
+    # 5. Dark
+    BossType.DARK: {"color": (20, 0, 40), "proj": ProjectileType.DARK, "debuff": "blind"},
+    BossType.SHADOW: {"color": (30, 30, 30), "proj": ProjectileType.DARK, "debuff": "blind"},
+    BossType.DARKNESS: {"color": BLACK, "proj": ProjectileType.DARK, "debuff": "blind"},
+    BossType.VOID: {"color": (10, 0, 20), "proj": ProjectileType.DARK, "debuff": "slow"},
+    BossType.EMPTINESS: {"color": (40, 40, 40), "proj": ProjectileType.DARK, "debuff": "slow"},
+    BossType.CHAOS: {"color": (255, 20, 147), "proj": ProjectileType.CURSE, "debuff": "blind"},
+    BossType.CURSE: {"color": (139, 0, 139), "proj": ProjectileType.CURSE, "debuff": "slow"},
+    BossType.BLOOD: {"color": (136, 8, 8), "proj": ProjectileType.BIO, "debuff": "poison"},
+    BossType.SIN: {"color": (100, 0, 0), "proj": ProjectileType.CURSE, "debuff": "slow"},
+    BossType.FEAR: {"color": (40, 0, 0), "proj": ProjectileType.DARK, "debuff": "stun"},
+    # 6. Light
+    BossType.LIGHT: {"color": WHITE, "proj": ProjectileType.LIGHT, "debuff": "blind"},
+    BossType.SACRED: {"color": GOLD, "proj": ProjectileType.LIGHT, "debuff": "stun"},
+    BossType.DIVINE: {"color": (255, 255, 240), "proj": ProjectileType.LIGHT, "debuff": "stun"},
+    BossType.ASTRAL: {"color": (100, 149, 237), "proj": ProjectileType.COSMIC, "debuff": "slow"},
+    BossType.CELESTIAL: {"color": (135, 206, 250), "proj": ProjectileType.COSMIC, "debuff": "stun"},
+    BossType.PURITY: {"color": (245, 245, 245), "proj": ProjectileType.LIGHT, "debuff": "blind"},
+    BossType.ORDER: {"color": (70, 130, 180), "proj": ProjectileType.LIGHT, "debuff": "root"},
+    BossType.FAITH: {"color": (255, 250, 205), "proj": ProjectileType.LIGHT, "debuff": "stun"},
+    # 7. Magical
+    BossType.MANA: {"color": (0, 191, 255), "proj": ProjectileType.MAGIC, "debuff": "slow"},
+    BossType.ARCANE: {"color": (147, 112, 219), "proj": ProjectileType.MAGIC, "debuff": "blind"},
+    BossType.ENERGY: {"color": (0, 255, 255), "proj": ProjectileType.PLASMA, "debuff": "stun"},
+    BossType.AETHER: {"color": (230, 230, 250), "proj": ProjectileType.MAGIC, "debuff": "slow"},
+    BossType.ESSENCE: {"color": (255, 240, 245), "proj": ProjectileType.MAGIC, "debuff": "stun"},
+    BossType.SPIRITUAL: {"color": (176, 224, 230), "proj": ProjectileType.SPIRIT, "debuff": "slow"},
+    BossType.PSIONIC: {"color": (221, 160, 221), "proj": ProjectileType.SPIRIT, "debuff": "stun"},
+    BossType.ILLUSION: {"color": (218, 112, 214), "proj": ProjectileType.SPIRIT, "debuff": "blind"},
+    BossType.ENCHANTMENT: {"color": (255, 182, 193), "proj": ProjectileType.MAGIC, "debuff": "stun"},
+    BossType.RUNES: {"color": (123, 104, 238), "proj": ProjectileType.MAGIC, "debuff": "root"},
+    # 8. Temporal
+    BossType.TIME: {"color": (46, 139, 87), "proj": ProjectileType.TIME, "debuff": "slow"},
+    BossType.CHRONO: {"color": (0, 128, 128), "proj": ProjectileType.TIME, "debuff": "stun"},
+    BossType.ACCELERATION: {"color": (255, 215, 0), "proj": ProjectileType.TIME, "debuff": "slow"},
+    BossType.SLOWDOWN: {"color": (72, 61, 139), "proj": ProjectileType.TIME, "debuff": "slow"},
+    BossType.STASIS: {"color": (173, 216, 230), "proj": ProjectileType.TIME, "debuff": "stun"},
+    BossType.DIMENSION: {"color": (138, 43, 226), "proj": ProjectileType.SPACE, "debuff": "blind"},
+    BossType.DISTORTION: {"color": (186, 85, 211), "proj": ProjectileType.SPACE, "debuff": "slow"},
+    BossType.TELEPORTATION: {"color": (148, 0, 211), "proj": ProjectileType.SPACE, "debuff": "stun"},
+    BossType.PARADOX: {"color": (255, 0, 255), "proj": ProjectileType.SPACE, "debuff": "blind"},
+    # 9. Spatial
+    BossType.SPACE: {"color": (25, 25, 112), "proj": ProjectileType.SPACE, "debuff": "slow"},
+    BossType.GRAVITY: {"color": (0, 0, 50), "proj": ProjectileType.GRAVITY, "debuff": "slow"},
+    BossType.ANTI_GRAVITY: {"color": (200, 200, 255), "proj": ProjectileType.GRAVITY, "debuff": "slow"},
+    BossType.VACUUM: {"color": (10, 10, 30), "proj": ProjectileType.SPACE, "debuff": "blind"},
+    BossType.STAR: {"color": (255, 255, 224), "proj": ProjectileType.COSMIC, "debuff": "blind"},
+    BossType.SOLAR: {"color": (255, 165, 0), "proj": ProjectileType.COSMIC, "debuff": "burn"},
+    BossType.LUNAR: {"color": (240, 240, 255), "proj": ProjectileType.COSMIC, "debuff": "slow"},
+    BossType.COSMIC: {"color": (75, 0, 130), "proj": ProjectileType.COSMIC, "debuff": "stun"},
+    BossType.METEOR: {"color": (165, 42, 42), "proj": ProjectileType.COSMIC, "debuff": "stun"},
+    BossType.BLACK_HOLE: {"color": (0, 0, 0), "proj": ProjectileType.GRAVITY, "debuff": "stun"},
+    # 10. Tech
+    BossType.MECHANICAL: {"color": (192, 192, 192), "proj": ProjectileType.TECH, "debuff": "slow"},
+    BossType.ROBOTIC: {"color": (128, 128, 128), "proj": ProjectileType.TECH, "debuff": "stun"},
+    BossType.CYBER: {"color": (0, 255, 255), "proj": ProjectileType.TECH, "debuff": "blind"},
+    BossType.ELECTRONIC: {"color": (50, 205, 50), "proj": ProjectileType.TECH, "debuff": "stun"},
+    BossType.LASER: {"color": RED, "proj": ProjectileType.TECH, "debuff": "burn"},
+    BossType.PLASMA: {"color": (255, 0, 255), "proj": ProjectileType.PLASMA, "debuff": "burn"},
+    BossType.NANOTECHNOLOGY: {"color": (112, 128, 144), "proj": ProjectileType.TECH, "debuff": "poison"},
+    BossType.AI: {"color": (0, 191, 255), "proj": ProjectileType.TECH, "debuff": "blind"},
+    BossType.DRONE: {"color": (105, 105, 105), "proj": ProjectileType.TECH, "debuff": "slow"},
+    BossType.WEAPONRY: {"color": (47, 79, 79), "proj": ProjectileType.TECH, "debuff": "stun"},
+    # 11. Psychological
+    BossType.MIND: {"color": (255, 192, 203), "proj": ProjectileType.SPIRIT, "debuff": "blind"},
+    BossType.MENTAL: {"color": (219, 112, 147), "proj": ProjectileType.SPIRIT, "debuff": "stun"},
+    BossType.PSYCHIC: {"color": (238, 130, 238), "proj": ProjectileType.SPIRIT, "debuff": "stun"},
+    BossType.CONTROL: {"color": (139, 0, 0), "proj": ProjectileType.SPIRIT, "debuff": "stun"},
+    BossType.HYPNOSIS: {"color": (147, 112, 219), "proj": ProjectileType.SPIRIT, "debuff": "blind"},
+    BossType.CONFUSION: {"color": (240, 230, 140), "proj": ProjectileType.SPIRIT, "debuff": "blind"},
+    BossType.MADNESS: {"color": (255, 20, 147), "proj": ProjectileType.SPIRIT, "debuff": "stun"},
+    BossType.HALLUCINATION: {"color": (127, 255, 212), "proj": ProjectileType.SPIRIT, "debuff": "blind"},
+    BossType.TERROR: {"color": (139, 0, 0), "proj": ProjectileType.SPIRIT, "debuff": "stun"},
+    # 12. Physical
+    BossType.STRENGTH: {"color": (205, 133, 63), "proj": ProjectileType.EARTH, "debuff": "stun"},
+    BossType.IMPACT: {"color": (160, 82, 45), "proj": ProjectileType.EARTH, "debuff": "stun"},
+    BossType.SHOCKWAVE: {"color": (218, 165, 32), "proj": ProjectileType.SOUND, "debuff": "stun"},
+    BossType.VIBRATION: {"color": (189, 183, 107), "proj": ProjectileType.SOUND, "debuff": "slow"},
+    BossType.PRESSURE: {"color": (47, 79, 79), "proj": ProjectileType.GRAVITY, "debuff": "slow"},
+    BossType.SILENCE: {"color": (245, 245, 245), "proj": ProjectileType.SOUND, "debuff": "blind"},
+    BossType.SOUND: {"color": (135, 206, 235), "proj": ProjectileType.SOUND, "debuff": "stun"},
+    BossType.RESONANCE: {"color": (221, 160, 221), "proj": ProjectileType.SOUND, "debuff": "stun"},
+    BossType.INERTIA: {"color": (112, 128, 144), "proj": ProjectileType.TIME, "debuff": "slow"},
+    # 13. Beast
+    BossType.BEAST: {"color": (139, 69, 19), "proj": ProjectileType.BIO, "debuff": "stun"},
+    BossType.WILD: {"color": (107, 142, 35), "proj": ProjectileType.BIO, "debuff": "slow"},
+    BossType.RAGE: {"color": (255, 0, 0), "proj": ProjectileType.BIO, "debuff": "burn"},
+    BossType.INSTINCT: {"color": (188, 143, 143), "proj": ProjectileType.BIO, "debuff": "slow"},
+    BossType.PRIMAL: {"color": (160, 82, 45), "proj": ProjectileType.EARTH, "debuff": "stun"},
+    BossType.TOTEM: {"color": (210, 105, 30), "proj": ProjectileType.MAGIC, "debuff": "root"},
+    BossType.SHAMANIC: {"color": (154, 205, 50), "proj": ProjectileType.SPIRIT, "debuff": "stun"},
+    # 14. Symbolic
+    BossType.DEATH: {"color": BLACK, "proj": ProjectileType.DARK, "debuff": "stun"},
+    BossType.LIFE: {"color": (50, 205, 50), "proj": ProjectileType.LIGHT, "debuff": "slow"},
+    BossType.REBIRTH: {"color": (255, 215, 0), "proj": ProjectileType.LIGHT, "debuff": "stun"},
+    BossType.DESTRUCTION: {"color": (178, 34, 34), "proj": ProjectileType.FIRE, "debuff": "burn"},
+    BossType.CREATION: {"color": (135, 206, 250), "proj": ProjectileType.MAGIC, "debuff": "root"},
+    BossType.BALANCE: {"color": (220, 220, 220), "proj": ProjectileType.LIGHT, "debuff": "slow"},
+    BossType.DESPAIR: {"color": (112, 128, 144), "proj": ProjectileType.DARK, "debuff": "blind"},
+    BossType.WILL: {"color": (255, 255, 255), "proj": ProjectileType.LIGHT, "debuff": "stun"},
+    BossType.DESTINY: {"color": (218, 165, 32), "proj": ProjectileType.MAGIC, "debuff": "stun"},
+    # 15. Hybrids
+    BossType.FIRE_SHADOW: {"color": (100, 0, 50), "proj": ProjectileType.FIRE, "debuff": "blind"},
+    BossType.ICE_WIND: {"color": (200, 255, 255), "proj": ProjectileType.ICE, "debuff": "slow"},
+    BossType.POISON_NATURE: {"color": (100, 200, 0), "proj": ProjectileType.POISON, "debuff": "root"},
+    BossType.LIGHT_TIME: {"color": (255, 255, 150), "proj": ProjectileType.LIGHT, "debuff": "stun"},
+    BossType.CHAOS_MAGIC: {"color": (200, 0, 200), "proj": ProjectileType.MAGIC, "debuff": "blind"},
+    BossType.TECH_ENERGY: {"color": (0, 200, 255), "proj": ProjectileType.TECH, "debuff": "stun"},
+    BossType.BLOOD_CORRUPTION: {"color": (150, 0, 150), "proj": ProjectileType.BIO, "debuff": "poison"},
+    BossType.GRAVITY_DARKNESS: {"color": (20, 0, 40), "proj": ProjectileType.GRAVITY, "debuff": "slow"}
+}
 
 class Particle:
     def __init__(self, x, y, vel_x, vel_y, color, lifetime, size=5, shape="circle"):
@@ -331,7 +696,7 @@ class Menu:
         self.font_small = pygame.font.Font(None, 32)
         self.font_tiny = pygame.font.Font(None, 24)
         
-        self.main_options = ["Start Game", "Shop", "Quests", "Settings", "Exit (F5)"]  # ADDED "Quests"
+        self.main_options = ["Start Game", "Shop", "Quests", "Settings", "Exit (F5)"]
         self.pause_options = ["Return to Menu (Run Lost)", "Quit Game (F5)"]  # CHANGED pause options
         self.settings_options = ["Volume: 50%", "Speed: Normal", "Controls: ZQSD", "Rebind Keys", "Back"]
         self.control_schemes = ["ZQSD", "WASD", "Arrows", "Custom"]
@@ -351,6 +716,7 @@ class Menu:
         self.binding_mode = False
         self.binding_action = None
         self.character_options = ["Warrior", "Mage", "Archer", "Rogue", "Reaver", "Supreme One"]
+        self.mode_options = ["Boss Fight"]
         
         self.character_stats = {
             "Base": {
@@ -400,16 +766,39 @@ class Menu:
         self.selected = 0
         self.volume = 50
         self.game_speed = 1.0
-        
+
         self.notification = ""
         self.notification_timer = 0
-        
+
         # Quest menu state
         self.quest_view_state = 0  # 0: Class selection, 1: Quest list
         self.selected_quest_class = None
         self.menu_rects = [] # Store rects for mouse interaction
+
+        # Boss selection state
+        self.boss_options = [boss.value for boss in BossType]
+        self.selected_boss = 0
     
     def navigate(self, direction, current_state):
+        if current_state == GameState.MAIN_MENU and isinstance(direction, str):
+            if direction == "LEFT":
+                if self.selected == 0: self.selected = 1
+                elif self.selected == 2: self.selected = 0
+                elif self.selected == 4: self.selected = 3
+            elif direction == "RIGHT":
+                if self.selected == 0: self.selected = 2
+                elif self.selected == 1: self.selected = 0
+                elif self.selected == 3: self.selected = 4
+            elif direction == "UP":
+                if self.selected == 3: self.selected = 1
+                elif self.selected == 4: self.selected = 2
+                elif self.selected in [1, 2]: self.selected = 0
+            elif direction == "DOWN":
+                if self.selected == 0: self.selected = 3
+                elif self.selected == 1: self.selected = 3
+                elif self.selected == 2: self.selected = 4
+            return
+
         if current_state == GameState.MAIN_MENU:
             options = self.main_options
         elif current_state == GameState.PAUSED:
@@ -418,6 +807,10 @@ class Menu:
             options = self.settings_options
         elif current_state == GameState.CHARACTER_SELECT:
             options = self.character_options
+        elif current_state == GameState.MODE_SELECT:
+            options = self.mode_options
+        elif current_state == GameState.BOSS_SELECT:
+            self.selected_boss = (self.selected_boss + direction) % len(self.boss_options)
         elif current_state == GameState.REBIND_KEYS:
             options = self.rebind_options
         else:
@@ -481,14 +874,21 @@ class Menu:
         title = self.font_large.render("BOSS FIGHT", True, PURPLE)
         screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
         
-        y = 300
+        # Positions: [Start Game, Shop, Quests, Settings, Exit (F5)]
+        positions = [
+            (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2),        # Start Game
+            (SCREEN_WIDTH // 2 - 300, SCREEN_HEIGHT // 2),  # Shop
+            (SCREEN_WIDTH // 2 + 300, SCREEN_HEIGHT // 2),  # Quests
+            (150, SCREEN_HEIGHT - 100),                     # Settings
+            (SCREEN_WIDTH - 150, SCREEN_HEIGHT - 100)       # Exit (F5)
+        ]
+        
         for i, option in enumerate(self.main_options):
             color = YELLOW if i == self.selected else WHITE
             text = self.font_medium.render(option, True, color)
-            rect = text.get_rect(center=(SCREEN_WIDTH // 2, y + text.get_height() // 2))
+            rect = text.get_rect(center=positions[i])
             screen.blit(text, rect)
             self.menu_rects.append(rect)
-            y += 70
         
         hint = self.font_tiny.render("Navigate: Arrow Keys | Select: Enter | F2: Admin Panel", True, GRAY)
         screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2, SCREEN_HEIGHT - 50))
@@ -589,6 +989,54 @@ class Menu:
             b_text = self.font_tiny.render(f"• {buff}", True, WHITE)
             screen.blit(b_text, (detail_x + 20, y_b))
             y_b += 25
+
+        hint = self.font_tiny.render("Navigate: Arrow Keys | Select: Enter | Back: ESC", True, GRAY)
+        screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2, SCREEN_HEIGHT - 50))
+
+    def draw_mode_selection(self, screen):
+        screen.fill(BLACK)
+        self.menu_rects = []
+
+        title = self.font_large.render("SELECT GAME MODE", True, PURPLE)
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
+
+        y = 250
+        for i, option in enumerate(self.mode_options):
+            color = YELLOW if i == self.selected else WHITE
+            text = self.font_medium.render(option, True, color)
+            rect = text.get_rect(center=(SCREEN_WIDTH // 2, y + text.get_height() // 2))
+            screen.blit(text, rect)
+            self.menu_rects.append(rect)
+            y += 80
+
+        hint = self.font_tiny.render("Navigate: Arrow Keys | Select: Enter | Back: ESC", True, GRAY)
+        screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2, SCREEN_HEIGHT - 50))
+
+    def draw_boss_selection(self, screen):
+        screen.fill(BLACK)
+        self.menu_rects = []
+
+        title = self.font_large.render("SELECT BOSS TYPE", True, PURPLE)
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 50))
+
+        # Display boss options in a grid
+        bosses_per_row = 4
+        y_start = 150
+        x_start = 100
+        spacing_x = 200
+        spacing_y = 60
+
+        for i, boss_name in enumerate(self.boss_options):
+            row = i // bosses_per_row
+            col = i % bosses_per_row
+            x = x_start + col * spacing_x
+            y = y_start + row * spacing_y
+
+            color = YELLOW if i == self.selected_boss else WHITE
+            text = self.font_medium.render(boss_name, True, color)
+            rect = text.get_rect(center=(x, y))
+            screen.blit(text, rect)
+            self.menu_rects.append(rect)
 
         hint = self.font_tiny.render("Navigate: Arrow Keys | Select: Enter | Back: ESC", True, GRAY)
         screen.blit(hint, (SCREEN_WIDTH // 2 - hint.get_width() // 2, SCREEN_HEIGHT - 50))
@@ -833,6 +1281,14 @@ class Player:
         self.fire_slow = False
         self.external_slow = 1.0
         self.burn_damage_timer = 0
+        self.poison_timer = 0
+        self.freeze_timer = 0
+        self.blind_timer = 0
+        self.stun_timer = 0
+        self.root_timer = 0
+        self.slow_timer = 0
+        self.wither_timer = 0
+        self.corrosion_timer = 0
         
         # Animation state
         self.visual_x = self.x
@@ -841,6 +1297,12 @@ class Player:
         self.animation_timer = 0
         self.squash_stretch = 1.0  # For jump/land animations
         self.dash_trail = []  # Trail effect for dash
+        
+        # Sprite animations
+        self.animations = {}
+        self.current_animation = "idle"
+        self.load_animations()
+        self.hit_timer = 0
         
         # Character Class specific
         self.character_class = None
@@ -902,6 +1364,43 @@ class Player:
             "Reaver": {"buff1": 1200, "buff2": 0} # 20s, Crimson is auto
         }
     
+    def load_animations(self):
+        self.animations = {}
+        # Support both the base folder and the specific sword sprites folder
+        base_dir = "Stick Figure Character Sprites 2D"
+        sprite_dir = os.path.join(base_dir, "Sword sprites")
+        
+        if not os.path.exists(sprite_dir):
+            # Fallback to local Fighter sprites if exists
+            sprite_dir = "Fighter sprites"
+            if not os.path.exists(sprite_dir):
+                return
+
+        files = sorted(os.listdir(sprite_dir))
+        for filename in files:
+            if not filename.endswith(".png"): continue
+            
+            if "wallslide" in filename:
+                anim_name = "wallslide"
+            else:
+                parts = filename.split('_')
+                if len(parts) < 2: continue
+                anim_name = parts[1].lower()
+            
+            if anim_name not in self.animations:
+                self.animations[anim_name] = []
+            
+            path = os.path.join(sprite_dir, filename)
+            try:
+                image = pygame.image.load(path).convert_alpha()
+                # The sword sprites seem to be large, we'll scale them to fit the player
+                # Stick figures often have a lot of empty space around them
+                # 128x128 is a good size for 40x60 hitbox, but we might need to adjust
+                image = pygame.transform.scale(image, (128, 128))
+                self.animations[anim_name].append(image)
+            except:
+                continue
+
     def update(self, platforms, walls, temp_walls, fire_zones, mouse_pos, camera_x, camera_y, game_instance=None):
         keys = pygame.key.get_pressed()
         self.game = game_instance
@@ -919,10 +1418,14 @@ class Player:
         elif self.character_class == "Reaver":
             # Survivor's Instinct: Below 20 HP, +25% regen for 4s (simulated as constant while low)
             if self.hp < 20:
-                self.hp = min(self.max_hp, self.hp + (25 / 60 / 4)) # 25 HP over 4s
+                regen = (25 / 60 / 4)
+                if self.wither_timer > 0: regen *= 0.5
+                self.hp = min(self.max_hp, self.hp + regen) # 25 HP over 4s
             # Crimson Aura: 5 HP/s regen while enemies nearby
             if self.buffs["crimson_aura"] > 0:
-                self.hp = min(self.max_hp, self.hp + 5 / 60)
+                regen = 5 / 60
+                if self.wither_timer > 0: regen *= 0.5
+                self.hp = min(self.max_hp, self.hp + regen)
                 self.buffs["crimson_aura"] -= 1
         elif self.character_class == "Supreme One":
             # Supreme Hybrid (Reduced Class Passives)
@@ -938,7 +1441,9 @@ class Player:
             missing_hp_ratio = 1.0 - (self.hp / self.max_hp)
             regen_base = 1.0 / 60
             regen_boost = (missing_hp_ratio * 10.0) / 60
-            self.hp = min(self.max_hp, self.hp + regen_base + regen_boost)
+            total_regen = regen_base + regen_boost
+            if self.wither_timer > 0: total_regen *= 0.5
+            self.hp = min(self.max_hp, self.hp + total_regen)
             
             # Unstoppable Will: Progressive resistance to CC
             self.cc_resistance = min(0.8, self.cc_resistance + 0.0001)
@@ -969,6 +1474,26 @@ class Player:
             self.buff_cooldowns["buff1"] -= 1
         if self.buff_cooldowns["buff2"] > 0:
             self.buff_cooldowns["buff2"] -= 1
+        
+        # New debuff timers
+        if self.poison_timer > 0:
+            self.poison_timer -= 1
+            if self.poison_timer % 60 == 0:
+                self.take_damage(1, "poison")
+        if self.freeze_timer > 0:
+            self.freeze_timer -= 1
+        if self.blind_timer > 0:
+            self.blind_timer -= 1
+        if self.stun_timer > 0:
+            self.stun_timer -= 1
+        if self.root_timer > 0:
+            self.root_timer -= 1
+        if self.slow_timer > 0:
+            self.slow_timer -= 1
+        if self.wither_timer > 0:
+            self.wither_timer -= 1
+        if self.corrosion_timer > 0:
+            self.corrosion_timer -= 1
         
         if self.dash_cooldown > 0:
             self.dash_cooldown -= 1
@@ -1011,6 +1536,15 @@ class Player:
             
             self.vel_x = 0
             speed = self.speed * self.external_slow * self.move_speed_bonus
+            
+            if self.freeze_timer > 0:
+                speed *= 0.3
+            elif self.slow_timer > 0:
+                speed *= 0.6
+
+            # Stun and root prevent horizontal movement
+            if self.stun_timer > 0 or self.root_timer > 0:
+                speed = 0
             
             # Sniper cannot move while aiming
             if self.weapon_type == "sniper" and self.charging:
@@ -1084,15 +1618,53 @@ class Player:
             if player_rect.colliderect(fire['rect']):
                 self.fire_slow = True
                 if not self.dashing:
-                    self.burn_damage_timer += 1
-                    if self.burn_damage_timer >= 30:
-                        self.take_damage(2, "fire")
-                        self.burn_damage_timer = 0
+                    if fire.get('type') == 'poison':
+                        if self.animation_timer % 20 == 0:
+                            self.take_damage(3, "poison")
+                        self.poison_timer = max(self.poison_timer, 30)
+                    elif fire.get('type') == 'acid':
+                        if self.animation_timer % 20 == 0:
+                            self.take_damage(2, "acid")
+                        self.corrosion_timer = max(self.corrosion_timer, 60)
+                    else:
+                        self.burn_damage_timer += 1
+                        if self.burn_damage_timer >= 30:
+                            self.take_damage(2, "fire")
+                            self.burn_damage_timer = 0
         
         if not self.fire_slow:
             self.burn_damage_timer = 0
             
         self.external_slow = 1.0
+
+        # Animation state selection
+        old_anim = self.current_animation
+        if self.hp <= 0:
+            self.current_animation = "death"
+        elif self.hit_timer > 0:
+            self.current_animation = "hit"
+        elif self.dashing:
+            self.current_animation = "dash"
+        elif self.swing_timer > 0:
+            if not self.on_ground:
+                self.current_animation = "air_attack"
+            else:
+                self.current_animation = "combo"
+        elif not self.on_ground:
+            if self.on_wall:
+                self.current_animation = "wallslide"
+            else:
+                self.current_animation = "jump"
+        elif self.vel_x != 0:
+            if abs(self.vel_x) > self.speed:
+                self.current_animation = "run"
+            else:
+                self.current_animation = "walk"
+        else:
+            self.current_animation = "idle"
+            
+        if old_anim != self.current_animation:
+            self.animation_timer = 0
     
     def check_collision(self, platforms, walls, temp_walls, axis):
         player_rect = pygame.Rect(self.x, self.y, self.width, self.height)
@@ -1149,6 +1721,10 @@ class Player:
 
         final_damage = amount
 
+        # Corrosive effect: +25% damage taken
+        if self.corrosion_timer > 0:
+            final_damage *= 1.25
+
         # Shield Stance (Warrior)
         if self.buffs["shield_stance"] > 0:
             final_damage *= 0.85
@@ -1169,6 +1745,7 @@ class Player:
                     source.take_damage(amount * 0.2) # Counter Strike
 
         self.hp -= final_damage
+        self.hit_timer = 15
         
         if self.character_class == "Supreme One":
             self.damage_taken_total += final_damage
@@ -1346,6 +1923,7 @@ class Player:
                 heal_amount += amount * 0.25
 
         if heal_amount > 0:
+            if self.wither_timer > 0: heal_amount *= 0.5
             self.hp = min(self.max_hp, self.hp + heal_amount)
             self.quest_progress['reaver_hp_siphoned'] += int(heal_amount)
 
@@ -1363,6 +1941,8 @@ class Player:
                 self.quest_progress['reaver_low_hp_damage'] += amount
 
     def jump(self):
+        if self.stun_timer > 0 or self.root_timer > 0:
+            return
         if self.on_ground or self.jumps_left > 0:
             if self.on_wall:
                 self.vel_y = -self.jump_power
@@ -1374,17 +1954,19 @@ class Player:
                 self.jumps_left -= 1
     
     def dash(self):
+        if self.stun_timer > 0:
+            return
         if self.dash_cooldown == 0:
             self.dashing = True
             self.dash_timer = self.dash_duration
             self.dash_cooldown = self.dash_cooldown_max
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_q]:
+            
+            # Use current movement direction or facing direction
+            if self.vel_x < 0:
                 self.dash_direction = -1
-            elif keys[pygame.K_d]:
+            elif self.vel_x > 0:
                 self.dash_direction = 1
             else:
-                # Default to facing direction
                 self.dash_direction = 1 if self.facing_right else -1
     
     def basic_attack(self):
@@ -1460,9 +2042,73 @@ class Player:
             pygame.draw.circle(screen, (*color, 80), (int(x + draw_width // 2), int(y + draw_height // 2)), shield_radius, 3)
         else:
             color = BLUE
-        
+            if self.freeze_timer > 0:
+                color = CYAN
+            elif self.poison_timer > 0:
+                color = POISON_GREEN
+            elif self.stun_timer > 0:
+                color = YELLOW
+            elif self.root_timer > 0:
+                color = BROWN
+
         # Draw player with squash/stretch
-        pygame.draw.rect(screen, color, (x, y + height_diff, draw_width, draw_height))
+        drawn_sprite = False
+        if self.current_animation in self.animations and self.animations[self.current_animation]:
+            anim_frames = self.animations[self.current_animation]
+            # Animation speed: 10 FPS (6 frames per animation frame at 60 FPS)
+            frame_index = (self.animation_timer // 6) % len(anim_frames)
+            image = anim_frames[frame_index]
+            
+            # Flip image based on direction
+            if not self.facing_right:
+                image = pygame.transform.flip(image, True, False)
+            
+            # Center the 128x128 sprite on the hitbox
+            # Hitbox is (draw_width, draw_height)
+            sprite_x = x + draw_width // 2 - 64
+            sprite_y = y + height_diff + draw_height // 2 - 64
+            
+            # Apply debuff color tint if necessary
+            if color != BLUE: # Only tint if not the default blue color
+                # Create a colored surface to blend
+                tint_surf = pygame.Surface(image.get_size(), pygame.SRCALPHA)
+                tint_surf.fill((*color, 100)) # Semi-transparent tint
+                image = image.copy()
+                image.blit(tint_surf, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+
+            screen.blit(image, (sprite_x, sprite_y))
+            drawn_sprite = True
+            
+        if not drawn_sprite:
+            pygame.draw.rect(screen, color, (x, y + height_diff, draw_width, draw_height))
+        
+        # Debuff specific overlays
+        if self.freeze_timer > 0:
+            # Ice block effect
+            ice_surf = pygame.Surface((draw_width + 10, draw_height + 10), pygame.SRCALPHA)
+            pygame.draw.rect(ice_surf, (200, 240, 255, 150), (0, 0, draw_width + 10, draw_height + 10), border_radius=5)
+            screen.blit(ice_surf, (x - 5, y + height_diff - 5))
+        
+        if self.blind_timer > 0:
+            # Dark smoke/blind effect
+            smoke_surf = pygame.Surface((draw_width + 20, draw_height + 20), pygame.SRCALPHA)
+            pygame.draw.circle(smoke_surf, (20, 0, 40, 200), (draw_width // 2 + 10, draw_height // 2 + 10), 30)
+            screen.blit(smoke_surf, (x - 10, y + height_diff - 10))
+            
+        if self.stun_timer > 0:
+            # Dizzy stars
+            for i in range(3):
+                angle = (self.animation_timer * 0.1) + (i * (math.pi * 2 / 3))
+                sx = x + draw_width // 2 + math.cos(angle) * 30
+                sy = y + height_diff - 10 + math.sin(angle * 0.5) * 5
+                pygame.draw.circle(screen, YELLOW, (int(sx), int(sy)), 3)
+        
+        if self.root_timer > 0:
+            # Vines at feet
+            for i in range(4):
+                vx = x + (i * (draw_width // 3))
+                vy = y + height_diff + draw_height - 10
+                pygame.draw.rect(screen, NATURE_GREEN, (vx - 5, vy, 10, 20))
         
         # Draw attack swing arc
         if self.swing_timer > 0:
@@ -1487,16 +2133,17 @@ class Player:
                     pygame.draw.polygon(surf, (*WHITE, alpha), points)
                     screen.blit(surf, (0, 0))
 
-        # Directional indicator (simple triangle)
-        if self.facing_right:
-            points = [(x + draw_width, y + height_diff + draw_height // 2),
-                     (x + draw_width - 10, y + height_diff + draw_height // 2 - 5),
-                     (x + draw_width - 10, y + height_diff + draw_height // 2 + 5)]
-        else:
-            points = [(x, y + height_diff + draw_height // 2),
-                     (x + 10, y + height_diff + draw_height // 2 - 5),
-                     (x + 10, y + height_diff + draw_height // 2 + 5)]
-        pygame.draw.polygon(screen, WHITE, points)
+        # Directional indicator (simple triangle) - only draw if not using sprites
+        if not drawn_sprite:
+            if self.facing_right:
+                points = [(x + draw_width, y + height_diff + draw_height // 2),
+                         (x + draw_width - 10, y + height_diff + draw_height // 2 - 5),
+                         (x + draw_width - 10, y + height_diff + draw_height // 2 + 5)]
+            else:
+                points = [(x, y + height_diff + draw_height // 2),
+                         (x + 10, y + height_diff + draw_height // 2 - 5),
+                         (x + 10, y + height_diff + draw_height // 2 + 5)]
+            pygame.draw.polygon(screen, WHITE, points)
         
         if self.charging:
             center_x, center_y = x + draw_width // 2, y + height_diff + draw_height // 2
@@ -1573,7 +2220,8 @@ class Player:
                     curr_y -= 5
 
 class Boss:
-    def __init__(self):
+    def __init__(self, boss_type=BossType.FIRE):
+        self.type = boss_type
         self.width, self.height = 120, 140
         self.x, self.y = MAP_WIDTH // 2, 100
         self.max_hp, self.hp = 500, 500
@@ -1597,6 +2245,11 @@ class Boss:
         self.laser_cooldown = 0
         self.shockwave_cooldown = 240
         self.minion_cooldown = 360
+        
+        # New type-specific cooldowns
+        self.special_attack_cooldown = 0
+        self.special_attack_cooldown_max = 300
+        
         self.flash_timer = 0
         
         # Phase 2 transition animation
@@ -1618,6 +2271,8 @@ class Boss:
             self.shockwave_cooldown -= 1
         if self.minion_cooldown > 0:
             self.minion_cooldown -= 1
+        if self.special_attack_cooldown > 0:
+            self.special_attack_cooldown -= 1
         if self.flash_timer > 0:
             self.flash_timer -= 1
         
@@ -1692,7 +2347,43 @@ class Boss:
                 pygame.draw.circle(screen, ORANGE, (int(particle_x), int(particle_y)), particle_size)
         else:
             # Normal boss rendering
-            color = WHITE if self.flash_timer > 0 else (RED if self.phase == 2 else PURPLE)
+            type_colors = {
+                BossType.FIRE: RED, BossType.WATER: BLUE, BossType.ICE: CYAN, BossType.EARTH: BROWN, BossType.WIND: WHITE, BossType.LIGHTNING: YELLOW,
+                BossType.NATURE: NATURE_GREEN, BossType.PLANT: NATURE_GREEN, BossType.WOOD: (101, 67, 33), BossType.STONE: GRAY, BossType.SAND: (194, 178, 128), BossType.MUD: (75, 54, 33),
+                BossType.METAL: (176, 191, 197), BossType.CRYSTAL: (162, 210, 255), BossType.MAGMA: (255, 69, 0), BossType.LAVA: LAVA_RED, BossType.STEAM: (224, 224, 224),
+                BossType.ASH: (105, 105, 105), BossType.SNOW: (255, 250, 250), BossType.BLACK_ICE: (20, 20, 40), BossType.STORM: (75, 0, 130),
+                BossType.THUNDERSTORM: (25, 25, 112), BossType.FOG: (211, 211, 211), BossType.RAIN: (0, 0, 128), BossType.HAIL: (240, 248, 255),
+                BossType.BLIZZARD: (175, 238, 238), BossType.HEATWAVE: (255, 140, 0), BossType.DROUGHT: (210, 180, 140), BossType.HURRICANE: (70, 130, 180),
+                BossType.POISON: POISON_GREEN, BossType.VENOM: (127, 255, 0), BossType.ACID: (191, 255, 0), BossType.INFECTION: (139, 69, 19),
+                BossType.DISEASE: (107, 142, 35), BossType.SPORE: (154, 205, 50), BossType.RADIATION: (57, 255, 20), BossType.PARASITE: (139, 0, 0),
+                BossType.CORRUPTION: (128, 0, 128), BossType.DARK: (20, 0, 40), BossType.SHADOW: (30, 30, 30), BossType.DARKNESS: BLACK, BossType.VOID: (10, 0, 20),
+                BossType.EMPTINESS: (40, 40, 40), BossType.CHAOS: (255, 20, 147), BossType.CURSE: (139, 0, 139), BossType.BLOOD: (136, 8, 8),
+                BossType.SIN: (100, 0, 0), BossType.FEAR: (40, 0, 0), BossType.LIGHT: WHITE, BossType.SACRED: GOLD, BossType.DIVINE: (255, 255, 240),
+                BossType.ASTRAL: (100, 149, 237), BossType.CELESTIAL: (135, 206, 250), BossType.PURITY: (245, 245, 245), BossType.ORDER: (70, 130, 180),
+                BossType.FAITH: (255, 250, 205), BossType.MANA: (0, 191, 255), BossType.ARCANE: (147, 112, 219), BossType.ENERGY: (0, 255, 255),
+                BossType.AETHER: (230, 230, 250), BossType.ESSENCE: (255, 240, 245), BossType.SPIRITUAL: (176, 224, 230), BossType.PSIONIC: (221, 160, 221),
+                BossType.ILLUSION: (218, 112, 214), BossType.ENCHANTMENT: (255, 182, 193), BossType.RUNES: (123, 104, 238), BossType.TIME: (46, 139, 87),
+                BossType.CHRONO: (0, 128, 128), BossType.ACCELERATION: (255, 215, 0), BossType.SLOWDOWN: (72, 61, 139), BossType.STASIS: (173, 216, 230),
+                BossType.DIMENSION: (138, 43, 226), BossType.DISTORTION: (186, 85, 211), BossType.TELEPORTATION: (148, 0, 211), BossType.PARADOX: (255, 0, 255),
+                BossType.SPACE: (25, 25, 112), BossType.GRAVITY: (0, 0, 50), BossType.ANTI_GRAVITY: (200, 200, 255), BossType.VACUUM: (10, 10, 30),
+                BossType.STAR: (255, 255, 224), BossType.SOLAR: (255, 165, 0), BossType.LUNAR: (240, 240, 255), BossType.COSMIC: (75, 0, 130),
+                BossType.METEOR: (165, 42, 42), BossType.BLACK_HOLE: (0, 0, 0), BossType.MECHANICAL: (192, 192, 192), BossType.ROBOTIC: (128, 128, 128),
+                BossType.CYBER: (0, 255, 255), BossType.ELECTRONIC: (50, 205, 50), BossType.LASER: RED, BossType.PLASMA: (255, 0, 255),
+                BossType.NANOTECHNOLOGY: (112, 128, 144), BossType.AI: (0, 191, 255), BossType.DRONE: (105, 105, 105), BossType.WEAPONRY: (47, 79, 79),
+                BossType.MIND: (255, 192, 203), BossType.MENTAL: (219, 112, 147), BossType.PSYCHIC: (238, 130, 238), BossType.CONTROL: (139, 0, 0),
+                BossType.HYPNOSIS: (147, 112, 219), BossType.CONFUSION: (240, 230, 140), BossType.MADNESS: (255, 20, 147), BossType.HALLUCINATION: (127, 255, 212),
+                BossType.TERROR: (139, 0, 0), BossType.STRENGTH: (205, 133, 63), BossType.IMPACT: (160, 82, 45), BossType.SHOCKWAVE: (218, 165, 32),
+                BossType.VIBRATION: (189, 183, 107), BossType.PRESSURE: (47, 79, 79), BossType.SILENCE: (245, 245, 245), BossType.SOUND: (135, 206, 235),
+                BossType.RESONANCE: (221, 160, 221), BossType.INERTIA: (112, 128, 144), BossType.BEAST: (139, 69, 19), BossType.WILD: (107, 142, 35),
+                BossType.RAGE: (255, 0, 0), BossType.INSTINCT: (188, 143, 143), BossType.PRIMAL: (160, 82, 45), BossType.TOTEM: (210, 105, 30),
+                BossType.SHAMANIC: (154, 205, 50), BossType.DEATH: BLACK, BossType.LIFE: (50, 205, 50), BossType.REBIRTH: (255, 215, 0),
+                BossType.DESTRUCTION: (178, 34, 34), BossType.CREATION: (135, 206, 250), BossType.BALANCE: (220, 220, 220), BossType.DESPAIR: (112, 128, 144),
+                BossType.WILL: (255, 255, 255), BossType.DESTINY: (218, 165, 32), BossType.FIRE_SHADOW: (100, 0, 50), BossType.ICE_WIND: (200, 255, 255),
+                BossType.POISON_NATURE: (100, 200, 0), BossType.LIGHT_TIME: (255, 255, 150), BossType.CHAOS_MAGIC: (200, 0, 200),
+                BossType.TECH_ENERGY: (0, 200, 255), BossType.BLOOD_CORRUPTION: (150, 0, 150), BossType.GRAVITY_DARKNESS: (20, 0, 40)
+            }
+            base_color = type_colors.get(self.type, PURPLE)
+            color = WHITE if self.flash_timer > 0 else (RED if self.phase == 2 else base_color)
             
             # Phase 2 subtle glow
             if self.phase == 2:
@@ -1700,10 +2391,22 @@ class Boss:
                 for i in range(2):
                     alpha_surf = pygame.Surface((self.width + 20, self.height + 20), pygame.SRCALPHA)
                     alpha = int(50 - i * 20)
-                    pygame.draw.rect(alpha_surf, (*RED, alpha), (0, 0, self.width + 20, self.height + 20))
+                    pygame.draw.rect(alpha_surf, (*base_color, alpha), (0, 0, self.width + 20, self.height + 20))
                     screen.blit(alpha_surf, (x - 10, y - 10))
             
             pygame.draw.rect(screen, color, (x, y, self.width, self.height))
+            
+            # Type indicator (icon or text)
+            font_small = pygame.font.Font(None, 24)
+            type_text = font_small.render(self.type.value, True, WHITE)
+            screen.blit(type_text, (x + self.width // 2 - type_text.get_width() // 2, y - 25))
+
+            # Ambient particles
+            if random.random() < 0.2:
+                particle_color = base_color
+                px = x + random.randint(0, self.width)
+                py = y + random.randint(0, self.height)
+                pygame.draw.circle(screen, particle_color, (px, py), random.randint(2, 5))
         
         # Health bar
         bar_width, bar_height = 400, 20
@@ -1718,40 +2421,442 @@ class Boss:
             phase_text = phase_font.render("PHASE 2", True, RED)
             screen.blit(phase_text, (bar_x + bar_width + 20, 15))
 
+
+class DragonBoss(Boss):
+    def __init__(self):
+        super().__init__(BossType.DARK)
+        self.width, self.height = 200, 180
+        self.max_hp, self.hp = 2500, 2500
+        self.speed = 3
+        self.phase = 1
+        self.chromatic_type = "Dark"
+        
+        # Flight variables
+        self.angle = 0
+        self.flight_center_x = MAP_WIDTH // 2
+        self.flight_center_y = 400
+        self.flight_radius_x = 800
+        self.flight_radius_y = 300
+        
+        # Phase 3 specific
+        self.on_ground = False
+        self.ground_y = MAP_HEIGHT - 50 - self.height
+        self.enrage_timer = 0
+        self.enrage_stacks = 0
+        
+        # Transition variables
+        self.transitioning = False
+        self.transition_timer = 0
+        
+        # Attacks
+        self.attack_timer = 0
+        self.current_attack = None
+        self.attack_telegraph = 0
+        
+        # Phase 2 specific
+        self.frostbite_stacks = 0
+        self.safe_zone = None
+        
+        # Phase 3 specific
+        self.hellflare_zones = []
+
+    def update(self, game=None):
+        if self.flash_timer > 0:
+            self.flash_timer -= 1
+        
+        if self.transitioning:
+            self.transition_timer += 1
+            if self.phase == 2 and self.transition_timer >= 180: # 3s
+                self.transitioning = False
+            elif self.phase == 3 and self.transition_timer >= 300: # 5s
+                self.transitioning = False
+            return
+
+        # Phase transitions
+        if self.phase == 1 and self.hp <= self.max_hp * 0.66:
+            self.phase = 2
+            self.chromatic_type = "White"
+            self.transitioning = True
+            self.transition_timer = 0
+            self.speed = 5
+            if game:
+                game.fire_zones = [] # Clear shadow zones (shadow zones are fire zones in this implementation)
+                game.screen_shake = 30
+        elif self.phase == 2 and self.hp <= self.max_hp * 0.33:
+            self.phase = 3
+            self.chromatic_type = "Scarlet"
+            self.transitioning = True
+            self.transition_timer = 0
+            self.width, self.height = 280, 250
+            if game:
+                game.screen_shake = 60
+                # Shatter arena center - remove some platforms?
+                # For now just visual shake as per specs
+
+        # Behavior based on phase
+        if not self.is_attacking:
+            if self.phase == 1:
+                self.update_flight_p1(game)
+            elif self.phase == 2:
+                self.update_flight_p2(game)
+            elif self.phase == 3:
+                self.update_behavior_p3(game)
+        else:
+            self.update_attack_movement(game)
+            
+        # Smooth visual position
+        self.visual_x += (self.x - self.visual_x) * 0.2
+        self.visual_y += (self.y - self.visual_y) * 0.2
+
+    def update_attack_movement(self, game):
+        if not game: return
+        
+        if self.current_attack in ["abyss_dive", "execution_dive"]:
+            if self.attack_duration > 0:
+                self.attack_duration -= 1
+                if self.attack_duration > 30: # Wind up
+                    pass
+                else: # Dive
+                    self.y += 40
+                    if self.y >= self.ground_y:
+                        self.y = self.ground_y
+                        self.is_attacking = False
+                        game.screen_shake = 30
+                        # Damage on impact
+                        dist = math.hypot(game.player.x - (self.x + self.width//2), game.player.y - (self.y + self.height//2))
+                        if dist < 300:
+                            game.player.take_damage(50, "normal", self)
+        elif self.current_attack == "judgment":
+            pass
+
+    def take_damage(self, damage):
+        self.hp -= damage
+        self.flash_timer = 5
+
+    def draw(self, screen, camera_x, camera_y):
+        x, y = self.visual_x - camera_x, self.visual_y - camera_y
+        
+        # Color based on chromatic type
+        colors = {"Dark": (20, 0, 40), "White": (240, 240, 255), "Scarlet": (200, 0, 0)}
+        base_color = colors.get(self.chromatic_type, PURPLE)
+        color = WHITE if self.flash_timer > 0 else base_color
+
+        if self.transitioning:
+            # Transition effect
+            alpha = int(abs(math.sin(pygame.time.get_ticks() * 0.01)) * 255)
+            s = pygame.Surface((self.width, self.height))
+            s.set_alpha(alpha)
+            s.fill(color)
+            screen.blit(s, (x, y))
+        else:
+            pygame.draw.rect(screen, color, (x, y, self.width, self.height))
+            
+        # Draw "Wings"
+        pygame.draw.polygon(screen, color, [(x, y + 40), (x - 60, y - 20), (x, y + 80)])
+        pygame.draw.polygon(screen, color, [(x + self.width, y + 40), (x + self.width + 60, y - 20), (x + self.width, y + 80)])
+            
+        # Head/Eyes
+        eye_color = RED if self.chromatic_type != "Scarlet" else YELLOW
+        pygame.draw.circle(screen, BLACK, (int(x + self.width // 2), int(y + 40)), 30)
+        pygame.draw.circle(screen, eye_color, (int(x + self.width // 2 - 10), int(y + 35)), 5)
+        pygame.draw.circle(screen, eye_color, (int(x + self.width // 2 + 10), int(y + 35)), 5)
+
+        # Ambient particles
+        if random.random() < 0.3 and hasattr(self, 'game_ref') and self.game_ref:
+            self.game_ref.create_particles(self.x + random.randint(0, self.width), self.y + random.randint(0, self.height), 
+                                         base_color, count=1, speed=2, size=random.randint(3, 6))
+
+
+        # Judgment safe zone
+        if self.is_attacking and self.current_attack == "judgment":
+            safe_x = self.judgment_safe_x - camera_x - self.judgment_safe_width // 2
+            pygame.draw.rect(screen, (0, 255, 0, 100), (safe_x, 0, self.judgment_safe_width, SCREEN_HEIGHT), 2)
+            # Add some light effect
+            s = pygame.Surface((self.judgment_safe_width, SCREEN_HEIGHT), pygame.SRCALPHA)
+            alpha = int(abs(math.sin(pygame.time.get_ticks() * 0.005)) * 50) + 20
+            s.fill((0, 255, 100, alpha))
+            screen.blit(s, (safe_x, 0))
+            
+        # Aimed attacks telegraph
+        if self.is_attacking and self.current_attack in ["void_fang", "infernal_spear", "scarlet_obliteration"]:
+            if hasattr(self, 'target_pos') and self.target_pos:
+                start_x, start_y = self.x + self.width // 2 - camera_x, self.y + self.height // 2 - camera_y
+                target_x, target_y = self.target_pos[0] - camera_x, self.target_pos[1] - camera_y
+                alpha = int(abs(math.sin(pygame.time.get_ticks() * 0.01)) * 100) + 50
+                color = (*RED, alpha) if ("scarlet" in self.current_attack or "infernal" in self.current_attack) else (100, 0, 150, alpha)
+                s = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+                pygame.draw.line(s, color, (start_x, start_y), (target_x, target_y), 2)
+                # Draw circle at target
+                pygame.draw.circle(s, color, (target_x, target_y), 20, 2)
+                screen.blit(s, (0, 0))
+
+        # Health bar (Continuous)
+        bar_width, bar_height = 800, 30
+        bar_x = SCREEN_WIDTH // 2 - bar_width // 2
+        pygame.draw.rect(screen, GRAY, (bar_x, 20, bar_width, bar_height))
+        health_width = int((max(0, self.hp) / self.max_hp) * bar_width)
+        hp_color = (100, 0, 150) if self.phase == 1 else ((200, 230, 255) if self.phase == 2 else (255, 50, 0))
+        pygame.draw.rect(screen, hp_color, (bar_x, 20, health_width, bar_height))
+        pygame.draw.rect(screen, WHITE, (bar_x, 20, bar_width, bar_height), 2)
+        
+        # Phase info
+        font = pygame.font.Font(None, 36)
+        phase_name = f"{self.chromatic_type} Dragon - Phase {self.phase}"
+        text = font.render(phase_name, True, WHITE)
+        screen.blit(text, (bar_x, 55))
+
+    # --- Phase 1: Dark Dragon Attacks ---
+    def attack_void_fang(self, game):
+        # Piercing dark energy projectile with 2s telegraph
+        self.is_attacking = True
+        self.attack_duration = 60 # 1s telegraph
+        self.current_attack = "void_fang"
+        self.target_pos = (game.player.x, game.player.y)
+
+    def attack_shadow_breath(self, game):
+        # Focused dark cone attack
+        self.is_attacking = True
+        self.attack_duration = 90 # 1.5s duration
+        self.current_attack = "shadow_breath"
+
+    def attack_abyss_dive(self, game):
+        # Teleports above player, crashes down
+        self.x = game.player.x - self.width // 2
+        self.y = game.player.y - 600
+        self.is_attacking = True
+        self.attack_duration = 60 # 1s total
+        self.current_attack = "abyss_dive"
+        game.screen_shake = 10
+
+    def attack_dark_claw(self, game):
+        # Rapid multi-hit melee combo
+        dist = math.hypot(game.player.x - self.x, game.player.y - self.y)
+        if dist < 250:
+            game.player.take_damage(10, "normal", self)
+            game.player.take_damage(10, "normal", self)
+            game.player.take_damage(10, "normal", self)
+
+    def attack_soul_rend(self, game):
+        # DoT attack
+        game.player.wither_timer = 600
+        game.create_particles(game.player.x, game.player.y, (100, 0, 100), count=30)
+
+    # --- Phase 2: White Dragon Attacks ---
+    def attack_frost_cataclysm(self, game):
+        # Icy explosion, damage + slow all players
+        game.player.take_damage(25, "ice", self)
+        game.player.slow_timer = 180
+        game.screen_shake = 30
+        game.create_particles(game.player.x, game.player.y, CYAN, count=50)
+
+    def attack_glacial_breath(self, game):
+        # Wide cone freeze attack
+        angle = math.atan2(game.player.y - self.y, game.player.x - self.x)
+        for i in range(15):
+            spread = (i - 7) * 0.15
+            game.projectiles.append(Projectile(self.x + self.width // 2, self.y + self.height // 2, 
+                                              math.cos(angle + spread) * 14, math.sin(angle + spread) * 14, 
+                                              20, ProjectileType.ICE))
+
+    def attack_blizzard_dominion(self, game):
+        # Massive arena-wide blizzard
+        self.is_attacking = True
+        self.attack_duration = 180 # 3s
+        self.current_attack = "blizzard_dominion"
+        game.player.slow_timer = 300
+
+    def attack_icequake(self, game):
+        # Ground slam, ice spikes erupt everywhere
+        self.is_attacking = True
+        self.attack_duration = 60
+        self.current_attack = "icequake"
+        for _ in range(10):
+            rx = random.randint(0, MAP_WIDTH)
+            game.temp_walls.append({'rect': pygame.Rect(rx, MAP_HEIGHT - 300, 40, 300), 'timer': 900})
+            game.fire_zones.append({'rect': pygame.Rect(rx, MAP_HEIGHT - 100, 40, 100), 'timer': 900, 'type': 'ice'})
+        game.screen_shake = 40
+
+    def attack_zero_field(self, game):
+        # Persistent freezing aura
+        game.fire_zones.append({'rect': pygame.Rect(self.x - 300, self.y - 300, 600 + self.width, 600 + self.height), 
+                               'timer': 600, 'type': 'ice'})
+
+    # --- Phase 3: Scarlet Dragon Attacks ---
+    def attack_crimson_inferno(self, game):
+        # Massive fire explosion
+        game.player.take_damage(35, "fire", self)
+        game.player.burn_damage_timer = 60
+        game.screen_shake = 50
+        game.create_particles(game.player.x, game.player.y, RED, count=60)
+
+    def attack_bloodfire_storm(self, game):
+        # Raining crimson flames
+        self.is_attacking = True
+        self.attack_duration = 240 # 4s
+        self.current_attack = "bloodfire_storm"
+
+    def attack_scarlet_cataclysm(self, game):
+        # Fire shockwave
+        game.screen_shake = 60
+        game.player.take_damage(20, "fire", self)
+        game.player.vel_y = -20
+
+    def attack_hellflare_domain(self, game):
+        # Persistent burning zone
+        zone = pygame.Rect(random.randint(0, MAP_WIDTH - 400), MAP_HEIGHT - 100, 400, 100)
+        game.fire_zones.append({'rect': zone, 'timer': 3600, 'type': 'fire'})
+        self.hellflare_zones.append(zone)
+
+    def attack_apocalypse_roar(self, game):
+        # Damage + weaken
+        game.player.take_damage(15, "magic", self)
+        game.player.slow_timer = 240
+        game.player.blind_timer = 120
+
+    def attack_scarlet_obliteration(self, game):
+        # Focused fire blast
+        self.is_attacking = True
+        self.attack_duration = 60
+        self.current_attack = "scarlet_obliteration"
+        self.target_pos = (game.player.x, game.player.y)
+
+    def attack_blood_claw(self, game):
+        # Brutal claw strike + bleed
+        dist = math.hypot(game.player.x - self.x, game.player.y - self.y)
+        if dist < 300:
+            game.player.take_damage(45, "normal", self)
+            game.player.wither_timer = 400
+
+    def attack_infernal_spear(self, game):
+        # Armor-piercing fire projectile
+        self.is_attacking = True
+        self.attack_duration = 60
+        self.current_attack = "infernal_spear"
+        self.target_pos = (game.player.x, game.player.y)
+
+    def attack_execution_dive(self, game):
+        # High-speed targeted dive
+        self.x = game.player.x - self.width // 2
+        self.y = game.player.y - 800
+        self.is_attacking = True
+        self.attack_duration = 45 # 0.75s total
+        self.current_attack = "execution_dive"
+        game.screen_shake = 20
+
+    def attack_judgment(self, game):
+        # Ultimate attack (below 10% HP)
+        if self.hp > self.max_hp * 0.1:
+            self.attack_crimson_inferno(game) # Fallback
+            return
+
+        self.is_attacking = True
+        self.attack_duration = 480 # 8s
+        self.current_attack = "judgment"
+        self.judgment_safe_x = random.randint(300, MAP_WIDTH - 300)
+        self.judgment_safe_width = 400
+        game.screen_shake = 5
+
+    def update_flight_p1(self, game):
+        # Phase 1: Dark Dragon flight pattern
+        self.angle += 0.02
+        self.x = self.flight_center_x + math.cos(self.angle) * self.flight_radius_x
+        self.y = self.flight_center_y + math.sin(self.angle) * self.flight_radius_y
+        # Keep within bounds
+        self.x = max(100, min(self.x, MAP_WIDTH - 100))
+        self.y = max(50, min(self.y, MAP_HEIGHT - 200))
+
+    def update_flight_p2(self, game):
+        # Phase 2: White Dragon flight pattern - more erratic
+        self.angle += 0.03
+        self.x = self.flight_center_x + math.cos(self.angle * 1.5) * self.flight_radius_x
+        self.y = self.flight_center_y + math.sin(self.angle * 2) * self.flight_radius_y
+        # Keep within bounds
+        self.x = max(100, min(self.x, MAP_WIDTH - 100))
+        self.y = max(50, min(self.y, MAP_HEIGHT - 200))
+
+    def update_behavior_p3(self, game):
+        # Phase 3: Scarlet Dragon ground behavior
+        if not self.on_ground:
+            self.y += 5  # Fall to ground
+            if self.y >= self.ground_y:
+                self.y = self.ground_y
+                self.on_ground = True
+                game.screen_shake = 20
+        else:
+            # Ground movement
+            if self.x < game.player.x:
+                self.x += self.speed
+            else:
+                self.x -= self.speed
+            self.x = max(100, min(self.x, MAP_WIDTH - 100))
+
+
+
+
+
+
 class Projectile:
-    def __init__(self, x, y, vel_x, vel_y, damage, proj_type):
+    def __init__(self, x, y, vel_x, vel_y, damage, proj_type, color=None):
         self.x, self.y = x, y
         self.vel_x, self.vel_y = vel_x, vel_y
         self.damage = damage
         self.type = proj_type
-        self.radius = 15 if proj_type == 'fireball' else 10
+        self.color = color if color else RED
+        
+        # Radii for different projectile types
+        radii = {
+            ProjectileType.FIRE: 15,
+            ProjectileType.ICE: 12,
+            ProjectileType.WATER: 14,
+            ProjectileType.POISON: 10,
+            ProjectileType.DARK: 13,
+            ProjectileType.LIGHT: 16,
+            ProjectileType.NATURE: 8,
+            ProjectileType.LAVA: 18,
+            ProjectileType.EARTH: 15,
+            ProjectileType.WIND: 10,
+            ProjectileType.LIGHTNING: 5,
+            ProjectileType.METAL: 12,
+            ProjectileType.CRYSTAL: 10,
+            ProjectileType.GRAVITY: 20,
+            ProjectileType.TIME: 14,
+            ProjectileType.SPACE: 16,
+            ProjectileType.TECH: 12,
+            ProjectileType.PLASMA: 15,
+            ProjectileType.BIO: 10,
+            ProjectileType.CURSE: 13,
+            ProjectileType.MAGIC: 14,
+            ProjectileType.SOUND: 15,
+            ProjectileType.SPIRIT: 12,
+            ProjectileType.COSMIC: 18
+        }
+        self.radius = radii.get(proj_type, 12)
     
     def update(self, game=None):
         self.x += self.vel_x
         self.y += self.vel_y
-        if self.type == 'fireball':
-            self.vel_y += 0.4
-            if game and random.random() < 0.3:
-                game.create_particles(self.x, self.y, ORANGE, count=1, speed=1, size=3, lifetime=20)
-        elif self.type == 'charged_attack':
-            if game and random.random() < 0.5:
-                game.create_particles(self.x, self.y, BLUE, count=1, speed=1, size=2, lifetime=15)
+        
+        # Add some gravity for certain types
+        if self.type in [ProjectileType.FIRE, ProjectileType.LAVA, ProjectileType.EARTH]:
+            self.vel_y += 0.3
+            
+        if game and random.random() < 0.2:
+            game.create_particles(self.x, self.y, self.color, count=1, speed=1, size=3, lifetime=20)
     
     def draw(self, screen, camera_x, camera_y):
         x, y = int(self.x - camera_x), int(self.y - camera_y)
         
         # Glow effect
-        glow_color = ORANGE if self.type == 'fireball' else (BLUE if self.type == 'charged_attack' else RED)
         glow_surf = pygame.Surface((self.radius * 4, self.radius * 4), pygame.SRCALPHA)
-        pygame.draw.circle(glow_surf, (*glow_color, 80), (self.radius * 2, self.radius * 2), self.radius * 2)
+        pygame.draw.circle(glow_surf, (*self.color, 80), (self.radius * 2, self.radius * 2), self.radius * 2)
         screen.blit(glow_surf, (x - self.radius * 2, y - self.radius * 2))
 
-        if self.type == 'charged_attack':
-            pygame.draw.circle(screen, WHITE, (x, y), self.radius)
-            pygame.draw.circle(screen, BLUE, (x, y), self.radius - 3)
-        else:
-            color = ORANGE if self.type == 'fireball' else RED
-            pygame.draw.circle(screen, color, (x, y), self.radius)
+        pygame.draw.circle(screen, self.color, (x, y), self.radius)
+        # Inner detail for some types
+        if self.type in [ProjectileType.ICE, ProjectileType.CRYSTAL, ProjectileType.LIGHT]:
+            pygame.draw.circle(screen, WHITE, (x, y), self.radius - 4)
+        elif self.type in [ProjectileType.LAVA, ProjectileType.PLASMA]:
+            pygame.draw.circle(screen, ORANGE, (x, y), self.radius - 6)
 
 class Minion:
     def __init__(self, x, y):
@@ -2369,6 +3474,7 @@ class Game:
         self.miniboss_manager = MiniBossManager()
         self.miniboss_phase_completed = False
         self.selected_character = None
+        self.game_mode = "Boss Fight"
 
         # Meta progression data (persists between runs)
         self.currency = 0  # Loaded from meta save
@@ -2459,6 +3565,27 @@ class Game:
                 'description': 'Siphon 200 total HP from enemies',
                 'max_progress': 200,
                 'reward': 'Reaver Mastery'
+            },
+            'dragon_parry': {
+                'name': 'Soul Guardian',
+                'class': 'Warrior',
+                'description': 'Parry Soul Rend 3 times',
+                'max_progress': 3,
+                'reward': 'Dragon Slayer Shield'
+            },
+            'dragon_charge': {
+                'name': 'Heavy Impact',
+                'class': 'Warrior',
+                'description': 'Deal 200 charged attack damage to Dragon',
+                'max_progress': 200,
+                'reward': 'Dragon Slayer Axe'
+            },
+            'dragon_dodge': {
+                'name': 'Shadow Dodger',
+                'class': 'Rogue',
+                'description': 'Dodge 5 Abyss Dives',
+                'max_progress': 5,
+                'reward': 'Dragon Scale Mail'
             }
         }
 
@@ -2601,7 +3728,16 @@ class Game:
         self.player.game = self  # Reference to game for quest tracking
         self.player.quest_progress.update(self.meta_quest_progress)
         
-        self.boss = Boss()
+        # Random boss type assignment
+        if self.game_mode == "Dragon Fight":
+            self.boss = DragonBoss()
+            self.state = GameState.DRAGON_FIGHT
+            self.dragon_timer = 600 * 60 # 600 seconds at 60 FPS
+        else:
+            boss_type = random.choice(list(BossType))
+            self.boss = Boss(boss_type)
+            self.state = GameState.PLAYING
+        
         self.miniboss_manager = MiniBossManager()
         self.miniboss_phase_completed = False
         self.projectiles = []
@@ -2632,7 +3768,7 @@ class Game:
             self.player.y = save_data['player']['y']
             self.player.hp = save_data['player']['hp']
             
-            self.boss = Boss()
+            self.boss = Boss(random.choice(list(BossType)))
             self.projectiles = []
             self.minions = []
             self.fire_zones = []
@@ -2787,7 +3923,7 @@ class Game:
                         y = self.boss.y + self.boss.height
                         vel_x = random.uniform(-4, 4)
                         vel_y = random.uniform(-3, 1)
-                        self.projectiles.append(Projectile(x, y, vel_x, vel_y, 10, 'fireball'))
+                        self.projectiles.append(Projectile(x, y, vel_x, vel_y, 10, ProjectileType.FIRE))
                     self.admin_history.append("Boss fireball attack spawned")
                 elif parts[1] == "laser" and self.boss and self.player:
                     laser_x = self.player.x + self.player.width // 2 - 25
@@ -2795,7 +3931,7 @@ class Game:
                     self.admin_history.append("Boss laser spawned")
                 elif parts[1] == "shockwave" and self.boss and self.player:
                     direction = 1 if self.player.x > self.boss.x else -1
-                    self.projectiles.append(Projectile(self.boss.x + self.boss.width // 2, self.boss.y + self.boss.height, direction * 8, 2, 20, 'shockwave'))
+                    self.projectiles.append(Projectile(self.boss.x + self.boss.width // 2, self.boss.y + self.boss.height, direction * 8, 2, 20, ProjectileType.SHOCKWAVE))
                     self.admin_history.append("Boss shockwave spawned")
                 elif parts[1] == "summon_minions" and self.boss:
                     count = int(parts[2]) if len(parts) > 2 else 3
@@ -2839,15 +3975,15 @@ class Game:
                     self.admin_history.append(f"Lava spawned at ({x}, {y})")
                 elif parts[1] == "fireball" and len(parts) >= 4:
                     x, y = float(parts[2]), float(parts[3])
-                    self.projectiles.append(Projectile(x, y, 0, 5, 10, 'fireball'))
+                    self.projectiles.append(Projectile(x, y, 0, 5, 10, ProjectileType.FIRE))
                     self.admin_history.append(f"Fireball spawned at ({x}, {y})")
                 elif parts[1] == "shockwave" and len(parts) >= 4:
                     x, y = float(parts[2]), float(parts[3])
-                    self.projectiles.append(Projectile(x, y, 8, 0, 20, 'shockwave'))
+                    self.projectiles.append(Projectile(x, y, 8, 0, 20, ProjectileType.SHOCKWAVE))
                     self.admin_history.append(f"Shockwave spawned")
                 elif parts[1] == "charged_attack" and len(parts) >= 4:
                     x, y = float(parts[2]), float(parts[3])
-                    self.projectiles.append(Projectile(x, y, 5, 0, 10, 'charged_attack'))
+                    self.projectiles.append(Projectile(x, y, 5, 0, 10, ProjectileType.CHARGED_ATTACK))
                     self.admin_history.append(f"Charged attack spawned")
                 elif parts[1] == "minion" and len(parts) >= 4:
                     x, y = float(parts[2]), float(parts[3])
@@ -3035,56 +4171,1358 @@ class Game:
         if not self.boss or not self.player:
             return
         
+        # Reset boss speed to base (in case of charge abilities)
+        self.boss.speed = 4
+        
         # Don't attack during Phase 2 transition
         if self.boss.phase2_transition_active:
             return
-            
-        multiplier = 3 if self.boss.phase == 2 else 1
         
-        if self.boss.fireball_cooldown == 0:
-            for _ in range(multiplier):
-                for i in range(5):
-                    x = self.boss.x + self.boss.width // 2
-                    y = self.boss.y + self.boss.height
-                    vel_x = random.uniform(-4, 4)
-                    vel_y = random.uniform(-3, 1)
-                    self.projectiles.append(Projectile(x, y, vel_x, vel_y, 10, 'fireball'))
-            self.boss.fireball_cooldown = self.boss.fireball_cooldown_max
+        multiplier = 2 if self.boss.phase == 2 else 1
         
-        if self.boss.laser_cooldown == 0:
-            base_timer, fire_frame = 30, 10
-            if self.boss.phase == 1:
-                laser_x = self.player.x + self.player.width // 2 - 25
-                self.lasers.append({'rect': pygame.Rect(laser_x, 0, 50, MAP_HEIGHT), 'timer': base_timer, 'fire_frame': fire_frame})
-            else:
-                for i in range(3):
-                    offset = random.randint(-100, 100)
-                    laser_x = self.player.x + self.player.width // 2 - 25 + offset
-                    laser = {'rect': pygame.Rect(laser_x, 0, 50, MAP_HEIGHT), 'timer': base_timer, 'fire_frame': fire_frame}
-                    if i == 0:
-                        self.lasers.append(laser)
-                    else:
-                        self.laser_spawn_queue.append({'laser': laser, 'delay': i * 6})
-            self.boss.laser_cooldown = self.boss.laser_cooldown_max
-        
-        if self.boss.shockwave_cooldown == 0:
-            for _ in range(multiplier):
-                direction = 1 if self.player.x > self.boss.x else -1
-                self.projectiles.append(Projectile(self.boss.x + self.boss.width // 2, self.boss.y + self.boss.height, direction * 8, 2, 20, 'shockwave'))
-            self.boss.shockwave_cooldown = self.boss.shockwave_cooldown_max
-        
+        # Common behavior: occasional minions (reduced frequency)
         if self.boss.minion_cooldown == 0:
             for _ in range(multiplier):
-                for i in range(3):
-                    spawn_x = self.boss.x + random.randint(-100, 100)
-                    self.minions.append(Minion(spawn_x, self.boss.y + 200))
-            self.boss.minion_cooldown = self.boss.minion_cooldown_max
-    
+                spawn_x = self.boss.x + random.randint(-100, 100)
+                self.minions.append(Minion(spawn_x, self.boss.y + 200))
+            self.boss.minion_cooldown = self.boss.minion_cooldown_max * 2
+
+        # Type-specific attacks
+        if self.boss.special_attack_cooldown == 0:
+            attack_count = 3 * multiplier
+            boss_center_x = self.boss.x + self.boss.width // 2
+            boss_bottom_y = self.boss.y + self.boss.height
+
+            if self.boss.type == BossType.FIRE:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # FireFlame Burst: Explodes fire around the boss
+                    num_shots = 16 * multiplier
+                    for i in range(num_shots):
+                        angle = (2 * math.pi / num_shots) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 8, math.sin(angle) * 8, 15, ProjectileType.FIRE))
+                    self.create_particles(boss_center_x, boss_bottom_y, ORANGE, count=30)
+                elif attack_choice == 2:
+                    # Inferno Slash: Burning melee strike
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 200 and dist_y < 200:
+                        self.player.take_damage(25 * multiplier, "fire")
+                        self.player.burn_damage_timer = 30
+                        self.create_particles(self.player.x, self.player.y, LAVA_RED, count=25)
+                elif attack_choice == 3:
+                    # Firestorm: Rains flames over a wide area
+                    for i in range(15 * multiplier):
+                        rx = random.randint(0, MAP_WIDTH)
+                        self.projectiles.append(Projectile(rx, 0, 0, 12, 10, ProjectileType.FIRE))
+                elif attack_choice == 4:
+                    # Burning Charge: Rushes forward
+                    self.boss.target_x = self.player.x
+                    self.boss.speed = 15 * multiplier
+                    dist_x = abs(self.player.x - boss_center_x)
+                    if dist_x < 100:
+                        self.player.take_damage(20 * multiplier, "fire")
+                        self.player.burn_damage_timer = 30
+                self.boss.special_attack_cooldown = 120
+
+            elif self.boss.type == BossType.ICE:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Frost Cleave: A freezing slash that slows the target
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 250 and dist_y < 250:
+                        self.player.take_damage(15 * multiplier, "ice")
+                        self.player.slow_timer = 120
+                        self.create_particles(self.player.x, self.player.y, CYAN, count=20)
+                elif attack_choice == 2:
+                    # Ice Spike Eruption: Sharp ice spikes burst from the ground
+                    for i in range(5 * multiplier):
+                        px = self.player.x + random.randint(-300, 300)
+                        self.temp_walls.append({'rect': pygame.Rect(px, MAP_HEIGHT - 300, 40, 300), 'timer': 120})
+                        self.fire_zones.append({'rect': pygame.Rect(px, MAP_HEIGHT - 100, 40, 100), 'timer': 120})
+                elif attack_choice == 3:
+                    # Frozen Prison: Encases a player in ice, stunning them
+                    self.player.stun_timer = 90
+                    self.player.take_damage(10 * multiplier, "ice")
+                    self.create_particles(self.player.x, self.player.y, WHITE, count=30)
+                elif attack_choice == 4:
+                    # Glacial Wave: A wide freezing wave
+                    num_shots = 12 * multiplier
+                    for i in range(num_shots):
+                        angle = math.pi * 0.25 + (math.pi * 0.5 / num_shots) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 10, math.sin(angle) * 10, 15, ProjectileType.ICE))
+                self.boss.special_attack_cooldown = 140
+
+            elif self.boss.type == BossType.BLIZZARD:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Blizzard Fury: Massive cold AoE
+                    for _ in range(30 * multiplier):
+                        rx = random.randint(0, MAP_WIDTH)
+                        ry = random.randint(0, MAP_HEIGHT // 2)
+                        self.projectiles.append(Projectile(rx, ry, random.uniform(-2, 2), random.uniform(5, 10), 8, ProjectileType.ICE))
+                    self.player.slow_timer = 180
+                elif attack_choice == 2:
+                    # White Death: Continuous freezing damage
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 200, self.player.y - 200, 400, 400), 'timer': 240})
+                    self.player.slow_timer = 60
+                elif attack_choice == 3:
+                    # Ice Wall: Damaging movement barriers
+                    for i in range(3 * multiplier):
+                        wall_x = boss_center_x + (i - 1) * 200
+                        self.temp_walls.append({'rect': pygame.Rect(wall_x, MAP_HEIGHT - 400, 50, 400), 'timer': 180})
+                        self.fire_zones.append({'rect': pygame.Rect(wall_x - 10, MAP_HEIGHT - 410, 70, 420), 'timer': 180})
+                elif attack_choice == 4:
+                    # Arctic Blast: Cone-shaped ice attack
+                    angle = math.atan2(self.player.y - boss_bottom_y, self.player.x - boss_center_x)
+                    num_blasts = 15 * multiplier
+                    for i in range(num_blasts):
+                        spread = (i - num_blasts // 2) * 0.1
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle + spread) * 15, math.sin(angle + spread) * 15, 12, ProjectileType.ICE))
+                self.boss.special_attack_cooldown = 160
+
+            elif self.boss.type == BossType.WATER:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # RainRainstorm: Persistent water damage
+                    for i in range(25 * multiplier):
+                        rx = random.randint(0, MAP_WIDTH)
+                        self.projectiles.append(Projectile(rx, 0, 0, 12, 6, ProjectileType.WATER))
+                    self.player.slow_timer = 90
+                elif attack_choice == 2:
+                    # Downpour Slam: Heavy water impact
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 200 and dist_y < 200:
+                        self.player.take_damage(40 * multiplier, "magic")
+                        self.player.stun_timer = 60
+                        self.screen_shake = 25
+                        self.create_particles(self.player.x, self.player.y, BLUE, count=50, speed=10)
+                elif attack_choice == 3:
+                    # Flood Rush: Water knockback attack
+                    push_dir = 1 if self.player.x > boss_center_x else -1
+                    self.player.vel_x += push_dir * 35
+                    self.player.take_damage(15 * multiplier, "magic")
+                    self.create_particles(boss_center_x, boss_bottom_y, BLUE, count=60, speed=20)
+                elif attack_choice == 4:
+                    # Soaked Ground: Slows and damages players
+                    self.fire_zones.append({'rect': pygame.Rect(0, MAP_HEIGHT - 120, MAP_WIDTH, 120), 'timer': 300})
+                    self.player.slow_timer = 120
+                self.boss.special_attack_cooldown = 150
+
+            elif self.boss.type == BossType.POISON:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Venom Strike: Poisoned melee attack
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 200 and dist_y < 200:
+                        self.player.take_damage(20 * multiplier, "poison")
+                        self.player.poison_timer = 240
+                        self.create_particles(self.player.x, self.player.y, POISON_GREEN, count=20)
+                elif attack_choice == 2:
+                    # Toxic Cloud: AoE poison damage
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 150, self.player.y - 150, 300, 300), 'timer': 240, 'type': 'poison'})
+                elif attack_choice == 3:
+                    # Corrosive Bite: Damage and armor reduction
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 150 and dist_y < 150:
+                        self.player.take_damage(25 * multiplier, "poison")
+                        self.player.corrosion_timer = 300
+                        self.create_particles(self.player.x, self.player.y, (173, 255, 47), count=25)
+                elif attack_choice == 4:
+                    # Poison Nova: Expanding poison explosion
+                    num_shots = 16 * multiplier
+                    for i in range(num_shots):
+                        angle = (2 * math.pi / num_shots) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 7, math.sin(angle) * 7, 10, ProjectileType.POISON))
+                    self.create_particles(boss_center_x, boss_bottom_y, POISON_GREEN, count=40)
+                self.boss.special_attack_cooldown = 180
+
+            elif self.boss.type == BossType.VENOM:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Lethal Injection: Strong poison DoT
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 150 and dist_y < 150:
+                        self.player.take_damage(10 * multiplier, "poison")
+                        self.player.poison_timer = 600 # 10 seconds of poison
+                        self.create_particles(self.player.x, self.player.y, (127, 255, 0), count=30)
+                elif attack_choice == 2:
+                    # Venom Fang: Slows and poisons
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 200 and dist_y < 200:
+                        self.player.take_damage(15 * multiplier, "poison")
+                        self.player.poison_timer = 300
+                        self.player.slow_timer = 180
+                        self.create_particles(self.player.x, self.player.y, POISON_GREEN, count=20)
+                elif attack_choice == 3:
+                    # Toxic Burst: Area venom explosion
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 200, self.player.y - 200, 400, 400), 'timer': 180, 'type': 'poison'})
+                    num_shots = 12 * multiplier
+                    for i in range(num_shots):
+                        angle = (2 * math.pi / num_shots) * i
+                        self.projectiles.append(Projectile(self.player.x, self.player.y, math.cos(angle) * 5, math.sin(angle) * 5, 8, ProjectileType.POISON))
+                elif attack_choice == 4:
+                    # Paralytic Bite: Poison + slow
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 180 and dist_y < 180:
+                        self.player.take_damage(12 * multiplier, "poison")
+                        self.player.poison_timer = 240
+                        self.player.slow_timer = 240
+                        self.create_particles(self.player.x, self.player.y, (154, 205, 50), count=25)
+                self.boss.special_attack_cooldown = 160
+
+            elif self.boss.type == BossType.DARK:
+                attack_choice = random.randint(1, 5)
+                if attack_choice == 1:
+                    # Original: Shadow bolts
+                    for i in range(attack_count + 2):
+                        angle = random.uniform(0, math.pi)
+                        vel_x = math.cos(angle) * 12
+                        vel_y = math.sin(angle) * 12
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, vel_x, vel_y, 15, ProjectileType.DARK))
+                elif attack_choice == 2:
+                    # Void Hole: Pull player towards center (simulated by adding vel)
+                    dist_x = boss_center_x - self.player.x
+                    dist_y = boss_bottom_y - self.player.y
+                    angle = math.atan2(dist_y, dist_x)
+                    self.player.vel_x += math.cos(angle) * 15
+                    self.create_particles(boss_center_x, boss_bottom_y, DARK_PURPLE, count=40)
+                elif attack_choice == 3:
+                    # Night Terrors: Spawn multiple minions
+                    for _ in range(4 * multiplier):
+                        self.minions.append(Minion(random.randint(0, MAP_WIDTH), 100))
+                elif attack_choice == 4:
+                    # Abyssal Gaze: Large laser
+                    self.lasers.append({'rect': pygame.Rect(0, self.player.y, MAP_WIDTH, 60), 'timer': 90, 'fire_frame': 30})
+                elif attack_choice == 5:
+                    # Shadow Clone: Boss teleports
+                    self.boss.x = random.randint(200, MAP_WIDTH - 200)
+                    self.create_particles(boss_center_x, boss_bottom_y, BLACK, count=30)
+                self.boss.special_attack_cooldown = 200
+
+            elif self.boss.type == BossType.LIGHT:
+                attack_choice = random.randint(1, 5)
+                if attack_choice == 1:
+                    # Original: Radiant orbs + laser
+                    for i in range(attack_count):
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, random.uniform(-3, 3), 5, 20, ProjectileType.LIGHT))
+                    self.lasers.append({'rect': pygame.Rect(self.player.x - 25, 0, 50, MAP_HEIGHT), 'timer': 60, 'fire_frame': 20})
+                elif attack_choice == 2:
+                    # Holy Cross: Vertical and Horizontal lasers
+                    self.lasers.append({'rect': pygame.Rect(0, self.player.y, MAP_WIDTH, 40), 'timer': 80, 'fire_frame': 20})
+                    self.lasers.append({'rect': pygame.Rect(self.player.x, 0, 40, MAP_HEIGHT), 'timer': 80, 'fire_frame': 20})
+                elif attack_choice == 3:
+                    # Blinding Light: Huge flash
+                    self.player.blind_timer = 120
+                    self.create_particles(boss_center_x, boss_bottom_y, WHITE, count=50)
+                elif attack_choice == 4:
+                    # Solar Flare: Radial burst of fast orbs
+                    num_shots = 12 * multiplier
+                    for i in range(num_shots):
+                        angle = (2 * math.pi / num_shots) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 15, math.sin(angle) * 15, 12, ProjectileType.LIGHT))
+                elif attack_choice == 5:
+                    # Judgment Bolts: Targeted strikes
+                    for i in range(5 * multiplier):
+                        rx = self.player.x + random.randint(-200, 200)
+                        self.projectiles.append(Projectile(rx, 0, 0, 15, 25, ProjectileType.LIGHT))
+                self.boss.special_attack_cooldown = 180
+                    # Original: Radiant orbs + laser
+                    for i in range(multiplier):
+                        laser_x = self.player.x + self.player.width // 2 - 25
+                        self.lasers.append({'rect': pygame.Rect(laser_x, 0, 50, MAP_HEIGHT), 'timer': 40, 'fire_frame': 15})
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, random.uniform(-3, 3), 5, 20, ProjectileType.LIGHT))
+                elif attack_choice == 2:
+                    # Holy Cross: Vertical and Horizontal lasers
+                    self.lasers.append({'rect': pygame.Rect(self.player.x, 0, 40, MAP_HEIGHT), 'timer': 80, 'fire_frame': 20})
+                    self.lasers.append({'rect': pygame.Rect(0, self.player.y, MAP_WIDTH, 40), 'timer': 80, 'fire_frame': 20})
+                elif attack_choice == 3:
+                    # Blinding Light: Huge flash
+                    self.player.blind_timer = 120
+                    self.player.stun_timer = 30
+                elif attack_choice == 4:
+                    # Solar Flare: Radial burst of fast orbs
+                    for i in range(16 * multiplier):
+                        angle = (2 * math.pi / 16) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 15, math.sin(angle) * 15, 12, ProjectileType.LIGHT))
+                elif attack_choice == 5:
+                    # Judgment Bolts: Targeted strikes
+                    for i in range(5 * multiplier):
+                        tx = self.player.x + random.randint(-100, 100)
+                        self.lasers.append({'rect': pygame.Rect(tx, 0, 20, MAP_HEIGHT), 'timer': 50, 'fire_frame': 10})
+                self.boss.special_attack_cooldown = 240
+
+            elif self.boss.type == BossType.NATURE:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Thorn Whip: Lashes a player, causing bleed damage
+                    dist_x = abs(self.player.x - boss_center_x)
+                    if dist_x < 300:
+                        self.player.take_damage(15 * multiplier, "nature")
+                        self.player.poison_timer = 180 # Using poison as bleed
+                        self.create_particles(self.player.x, self.player.y, NATURE_GREEN, count=15)
+                elif attack_choice == 2:
+                    # Root Snare: Roots players in place while damaging them
+                    self.player.root_timer = 90
+                    self.player.take_damage(10 * multiplier, "nature")
+                    self.create_particles(self.player.x, self.player.y, BROWN, count=20)
+                elif attack_choice == 3:
+                    # Spore Bloom: Releases toxic spores in an area
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 150, self.player.y - 150, 300, 300), 'timer': 150})
+                    self.player.blind_timer = 60
+                elif attack_choice == 4:
+                    # Overgrowth: Vines spread across the battlefield, dealing DoT
+                    for i in range(5 * multiplier):
+                        vx = random.randint(0, MAP_WIDTH - 200)
+                        self.fire_zones.append({'rect': pygame.Rect(vx, MAP_HEIGHT - 60, 200, 60), 'timer': 300})
+                self.boss.special_attack_cooldown = 160
+
+            elif self.boss.type == BossType.WOOD:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Splinter Crash: Wooden shards explode outward
+                    num_shots = 12 * multiplier
+                    for i in range(num_shots):
+                        angle = (2 * math.pi / num_shots) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 12, math.sin(angle) * 12, 12, ProjectileType.NATURE))
+                    self.create_particles(boss_center_x, boss_bottom_y, BROWN, count=25)
+                elif attack_choice == 2:
+                    # Bark Slam: Heavy defensive strike with knockback
+                    dist_x = abs(self.player.x - boss_center_x)
+                    if dist_x < 200:
+                        self.player.take_damage(20 * multiplier, "physical")
+                        push_dir = 1 if self.player.x > boss_center_x else -1
+                        self.player.vel_x += push_dir * 15
+                        self.create_particles(self.player.x, self.player.y, GRAY, count=20)
+                elif attack_choice == 3:
+                    # Piercing Branch: Skewers a player with sharpened wood
+                    angle = math.atan2(self.player.y - boss_bottom_y, self.player.x - boss_center_x)
+                    self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 15, math.sin(angle) * 15, 20, ProjectileType.NATURE))
+                    self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 18, math.sin(angle) * 18, 25, ProjectileType.NATURE))
+                self.boss.special_attack_cooldown = 160
+                elif attack_choice == 4:
+                    # Forest Wrath: AoE nature damage around the boss
+                    self.fire_zones.append({'rect': pygame.Rect(boss_center_x - 300, boss_bottom_y - 100, 600, 200), 'timer': 120})
+                    self.create_particles(boss_center_x, boss_bottom_y, NATURE_GREEN, count=40)
+                self.boss.special_attack_cooldown = 150
+
+            elif self.boss.type == BossType.LAVA:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Lava Eruption: Lava bursts from the ground
+                    self.screen_shake = 30
+                    for i in range(12 * multiplier):
+                        rx = random.randint(0, MAP_WIDTH)
+                        self.projectiles.append(Projectile(rx, MAP_HEIGHT, random.uniform(-2, 2), -random.uniform(12, 22), 20, ProjectileType.LAVA))
+                elif attack_choice == 2:
+                    # Molten Slam: High-damage burning strike
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 200 and dist_y < 200:
+                        self.player.take_damage(40 * multiplier, "fire")
+                        self.player.burn_damage_timer = 90
+                        self.create_particles(self.player.x, self.player.y, LAVA_RED, count=30)
+                elif attack_choice == 3:
+                    # Lava Pool: Creates a persistent damage zone
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 150, MAP_HEIGHT - 60, 300, 60), 'timer': 480})
+                elif attack_choice == 4:
+                    # Magma Wave: Flowing lava attack
+                    num_waves = 15 * multiplier
+                    for i in range(num_waves):
+                        angle = math.pi + (math.pi / num_waves) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 12, math.sin(angle) * 12, 15, ProjectileType.LAVA))
+                self.boss.special_attack_cooldown = 200
+
+            elif self.boss.type == BossType.EARTH:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Seismic Slam: Smashes the ground, dealing AoE damage
+                    self.screen_shake = 40
+                    self.fire_zones.append({'rect': pygame.Rect(boss_center_x - 300, MAP_HEIGHT - 80, 600, 80), 'timer': 90})
+                    self.create_particles(boss_center_x, MAP_HEIGHT, BROWN, count=40, speed=10)
+                elif attack_choice == 2:
+                    # Stone Fist: Heavy punch that stuns a player
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 150 and dist_y < 150:
+                        self.player.take_damage(35 * multiplier, "physical")
+                        self.player.stun_timer = 60
+                elif attack_choice == 3:
+                    # Earth Shatter: Cracks the ground, damaging players over time
+                    for i in range(10 * multiplier):
+                        rx = random.randint(0, MAP_WIDTH)
+                        self.fire_zones.append({'rect': pygame.Rect(rx, MAP_HEIGHT - 40, 120, 40), 'timer': 300})
+                elif attack_choice == 4:
+                    # Rock Barrage: Launches massive rocks
+                    for i in range(6 * multiplier):
+                        offset_x = random.randint(-300, 300)
+                        self.projectiles.append(Projectile(boss_center_x + offset_x, boss_bottom_y, (self.player.x - (boss_center_x + offset_x))/50, (self.player.y - boss_bottom_y)/50, 20, ProjectileType.EARTH))
+                self.boss.special_attack_cooldown = 180
+
+            elif self.boss.type == BossType.STONE:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Stone Crush: Collapses stone onto players
+                    for i in range(5 * multiplier):
+                        rx = self.player.x + random.randint(-100, 100)
+                        self.projectiles.append(Projectile(rx, 0, 0, 15, 30, ProjectileType.EARTH))
+                elif attack_choice == 2:
+                    # Granite Punch: Extremely heavy melee attack
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 120 and dist_y < 120:
+                        self.player.take_damage(50 * multiplier, "physical")
+                        self.player.stun_timer = 90
+                        self.screen_shake = 30
+                elif attack_choice == 3:
+                    # Stone Spikes: Spikes erupt under players
+                    for i in range(4 * multiplier):
+                        px = self.player.x + random.randint(-150, 150)
+                        self.temp_walls.append({'rect': pygame.Rect(px, MAP_HEIGHT - 350, 50, 350), 'timer': 120})
+                        self.fire_zones.append({'rect': pygame.Rect(px, MAP_HEIGHT - 50, 50, 50), 'timer': 120})
+                elif attack_choice == 4:
+                    # Earthen Armor Burst: Armor explodes, damaging nearby players
+                    num_shots = 12 * multiplier
+                    for i in range(num_shots):
+                        angle = (2 * math.pi / num_shots) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 8, math.sin(angle) * 8, 20, ProjectileType.EARTH))
+                    self.create_particles(boss_center_x, boss_bottom_y, GRAY, count=50, speed=10)
+                self.boss.special_attack_cooldown = 200
+
+            elif self.boss.type == BossType.WIND:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Wind Cutter: Sharp air blades strike players at range
+                    for i in range(8 * multiplier):
+                        angle = math.atan2(self.player.y - boss_bottom_y, self.player.x - boss_center_x)
+                        angle += random.uniform(-0.3, 0.3)
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 14, math.sin(angle) * 14, 12, ProjectileType.WIND))
+                elif attack_choice == 2:
+                    # Cyclone Pull: Pulls players toward the boss
+                    dist_x = boss_center_x - self.player.x
+                    dist_y = boss_bottom_y - self.player.y
+                    angle = math.atan2(dist_y, dist_x)
+                    pull_force = 18
+                    self.player.vel_x += math.cos(angle) * pull_force
+                    self.player.vel_y += math.sin(angle) * pull_force
+                    self.create_particles(boss_center_x, boss_bottom_y, WHITE, count=30)
+                elif attack_choice == 3:
+                    # Air Burst: Explodes compressed air around the boss
+                    num_shots = 20 * multiplier
+                    for i in range(num_shots):
+                        angle = (2 * math.pi / num_shots) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 10, math.sin(angle) * 10, 10, ProjectileType.WIND))
+                    self.create_particles(boss_center_x, boss_bottom_y, WHITE, count=40, speed=12)
+                elif attack_choice == 4:
+                    # Gale Rush: High-speed dash
+                    self.boss.target_x = self.player.x
+                    self.boss.speed = 20 * multiplier
+                    dist_x = abs(self.player.x - boss_center_x)
+                    if dist_x < 120:
+                        self.player.take_damage(15 * multiplier, "physical")
+                        self.player.vel_x += (20 if self.player.x > boss_center_x else -20)
+                self.boss.special_attack_cooldown = 140
+
+            elif self.boss.type == BossType.LIGHTNING:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Thunder Strike: Calls down lightning on a targeted player
+                    self.lasers.append({'rect': pygame.Rect(self.player.x - 20, 0, 40, MAP_HEIGHT), 'timer': 50, 'fire_frame': 20})
+                    self.create_particles(self.player.x, self.player.y, YELLOW, count=15)
+                elif attack_choice == 2:
+                    # Chain Lightning: Rapid sequence of aimed bolts
+                    for i in range(5 * multiplier):
+                        angle = math.atan2(self.player.y - boss_bottom_y, self.player.x - boss_center_x)
+                        angle += random.uniform(-0.4, 0.4)
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 16, math.sin(angle) * 16, 8, ProjectileType.LIGHTNING))
+                elif attack_choice == 3:
+                    # Overload Pulse: AoE electric explosion
+                    num_shots = 24 * multiplier
+                    for i in range(num_shots):
+                        angle = (2 * math.pi / num_shots) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 12, math.sin(angle) * 12, 12, ProjectileType.LIGHTNING))
+                    self.player.stun_timer = 20 # Mini-stun
+                elif attack_choice == 4:
+                    # Static Field: Damages players standing near the boss
+                    self.fire_zones.append({'rect': pygame.Rect(boss_center_x - 250, boss_bottom_y - 250, 500, 500), 'timer': 240})
+                    self.create_particles(boss_center_x, boss_bottom_y, CYAN, count=50)
+                self.boss.special_attack_cooldown = 160
+
+            elif self.boss.type == BossType.METAL:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Iron Cleave: Massive metallic slash
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 350 and dist_y < 200:
+                        self.player.take_damage(30 * multiplier, "physical")
+                        self.create_particles(self.player.x, self.player.y, (176, 191, 197), count=30)
+                elif attack_choice == 2:
+                    # Shrapnel Burst: Exploding metal fragments
+                    for i in range(24 * multiplier):
+                        angle = random.uniform(0, 2 * math.pi)
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 15, math.sin(angle) * 15, 10, ProjectileType.METAL))
+                    self.create_particles(boss_center_x, boss_bottom_y, (176, 191, 197), count=40)
+                elif attack_choice == 3:
+                    # Magnetic Pull: Pulls players toward the boss
+                    dist_x = boss_center_x - self.player.x
+                    dist_y = boss_bottom_y - self.player.y
+                    angle = math.atan2(dist_y, dist_x)
+                    self.player.vel_x += math.cos(angle) * 20
+                    self.player.vel_y += math.sin(angle) * 10
+                    self.create_particles(boss_center_x, boss_bottom_y, (100, 100, 255), count=25)
+                elif attack_choice == 4:
+                    # Steel Crush: Crushing melee attack
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 150 and dist_y < 150:
+                        self.player.take_damage(45 * multiplier, "physical")
+                        self.player.stun_timer = 60
+                        self.screen_shake = 30
+                        self.create_particles(self.player.x, self.player.y, (100, 100, 100), count=40)
+                self.boss.special_attack_cooldown = 160
+
+            elif self.boss.type == BossType.CRYSTAL:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Crystal Lance: Piercing crystal projectile
+                    angle = math.atan2(self.player.y - boss_bottom_y, self.player.x - boss_center_x)
+                    self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 18, math.sin(angle) * 18, 30, ProjectileType.CRYSTAL))
+                    self.create_particles(boss_center_x, boss_bottom_y, (162, 210, 255), count=15)
+                elif attack_choice == 2:
+                    # Shard Explosion: Crystal shards detonate outward
+                    num_shards = 16 * multiplier
+                    for i in range(num_shards):
+                        angle = (2 * math.pi / num_shards) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 12, math.sin(angle) * 12, 15, ProjectileType.CRYSTAL))
+                    self.create_particles(boss_center_x, boss_bottom_y, (255, 255, 255), count=30)
+                elif attack_choice == 3:
+                    # Prism Cage: Traps a player in crystal
+                    self.player.stun_timer = 120
+                    self.player.take_damage(10 * multiplier, "magic")
+                    # Visual effect for cage
+                    self.create_particles(self.player.x, self.player.y, (162, 210, 255), count=40, speed=2, size=8)
+                elif attack_choice == 4:
+                    # Reflective Burst: AoE crystal damage
+                    self.fire_zones.append({'rect': pygame.Rect(boss_center_x - 250, boss_bottom_y - 250, 500, 500), 'timer': 120})
+                    num_shards = 8 * multiplier
+                    for i in range(num_shards):
+                        angle = random.uniform(0, 2 * math.pi)
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 8, math.sin(angle) * 8, 20, ProjectileType.CRYSTAL))
+                self.boss.special_attack_cooldown = 180
+
+            elif self.boss.type == BossType.STORM:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Lightning Storm: Continuous lightning strikes
+                    for i in range(12 * multiplier):
+                        lx = random.randint(0, MAP_WIDTH)
+                        self.lasers.append({'rect': pygame.Rect(lx, 0, 15, MAP_HEIGHT), 'timer': 40, 'fire_frame': 15})
+                    self.create_particles(boss_center_x, boss_bottom_y, YELLOW, count=30)
+                elif attack_choice == 2:
+                    # Thunder Roar: Stuns players with sound and damage
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 500 and dist_y < 500:
+                        self.player.take_damage(20 * multiplier, "magic")
+                        self.player.stun_timer = 60
+                        self.screen_shake = 40
+                        self.create_particles(self.player.x, self.player.y, WHITE, count=50, speed=15)
+                elif attack_choice == 3:
+                    # Storm Crash: Wind and lightning slam
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 150, MAP_HEIGHT - 100, 300, 100), 'timer': 120})
+                    self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, (self.player.x - boss_center_x)/30, (self.player.y - boss_bottom_y)/30, 25, ProjectileType.LIGHTNING))
+                    self.create_particles(self.player.x, MAP_HEIGHT - 50, CYAN, count=30)
+                elif attack_choice == 4:
+                    # Gale Surge: High knockback wind attack
+                    push_dir = 1 if self.player.x > boss_center_x else -1
+                    self.player.vel_x += push_dir * 40
+                    self.player.vel_y -= 10
+                    self.player.take_damage(10 * multiplier, "magic")
+                    self.create_particles(boss_center_x, boss_bottom_y, WHITE, count=60, speed=20)
+                self.boss.special_attack_cooldown = 180
+
+            elif self.boss.type == BossType.SAND:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Sandstorm: Blinds and slows the player
+                    self.player.blind_timer = 120
+                    self.player.slow_timer = 120
+                    self.create_particles(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, BEIGE, count=100, speed=15)
+                elif attack_choice == 2:
+                    # Quicksand: Damaging and slowing floor hazard
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 100, MAP_HEIGHT - 60, 200, 60), 'timer': 240})
+                    self.player.slow_timer = 60
+                elif attack_choice == 3:
+                    # Sand Blast: Rapid fire of small sand particles
+                    for i in range(12 * multiplier):
+                        angle = math.atan2(self.player.y - boss_bottom_y, self.player.x - boss_center_x)
+                        angle += random.uniform(-0.4, 0.4)
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 12, math.sin(angle) * 12, 6, ProjectileType.EARTH))
+                elif attack_choice == 4:
+                    # Sand Tomb: Roots the player
+                    self.player.root_timer = 90
+                    self.player.take_damage(15 * multiplier, "physical")
+                    self.create_particles(self.player.x, self.player.y, BROWN, count=30)
+                self.boss.special_attack_cooldown = 180
+
+            elif self.boss.type == BossType.MUD:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Mud Grasp: Slows and damages players
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 300 and dist_y < 300:
+                        self.player.take_damage(10 * multiplier, "physical")
+                        self.player.slow_timer = 180
+                        self.create_particles(self.player.x, self.player.y, (75, 54, 33), count=20)
+                elif attack_choice == 2:
+                    # Bog Collapse: Ground collapses, dealing AoE damage
+                    self.screen_shake = 30
+                    for i in range(5 * multiplier):
+                        px = self.player.x + random.randint(-200, 200)
+                        self.fire_zones.append({'rect': pygame.Rect(px - 100, MAP_HEIGHT - 60, 200, 60), 'timer': 120})
+                        self.create_particles(px, MAP_HEIGHT - 30, (75, 54, 33), count=15)
+                elif attack_choice == 3:
+                    # Suffocating Mire: Continuous damage zone
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 150, self.player.y - 150, 300, 300), 'timer': 240})
+                    self.player.slow_timer = 60
+                elif attack_choice == 4:
+                    # Mud Slam: Heavy impact with slow effect
+                    angle = math.atan2(self.player.y - boss_bottom_y, self.player.x - boss_center_x)
+                    self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 10, math.sin(angle) * 10, 25, ProjectileType.BIO))
+                    self.player.slow_timer = 120
+                self.boss.special_attack_cooldown = 180
+
+            elif self.boss.type == BossType.MAGMA:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Lava Eruption: Lava bursts from the ground
+                    self.screen_shake = 30
+                    for i in range(12 * multiplier):
+                        rx = random.randint(0, MAP_WIDTH)
+                        self.projectiles.append(Projectile(rx, MAP_HEIGHT, random.uniform(-2, 2), -random.uniform(12, 22), 20, ProjectileType.LAVA))
+                elif attack_choice == 2:
+                    # Molten Slam: High-damage burning strike
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 200 and dist_y < 200:
+                        self.player.take_damage(40 * multiplier, "fire")
+                        self.player.burn_damage_timer = 90
+                        self.create_particles(self.player.x, self.player.y, (255, 69, 0), count=30)
+                elif attack_choice == 3:
+                    # Lava Pool: Creates a persistent damage zone
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 150, MAP_HEIGHT - 60, 300, 60), 'timer': 480})
+                elif attack_choice == 4:
+                    # Magma Wave: Flowing lava attack
+                    num_waves = 15 * multiplier
+                    for i in range(num_waves):
+                        angle = math.pi + (math.pi / num_waves) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 12, math.sin(angle) * 12, 15, ProjectileType.LAVA))
+                self.boss.special_attack_cooldown = 200
+
+            elif self.boss.type == BossType.STEAM:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Scalding Burst: Steam explosion that burns players
+                    num_shots = 16 * multiplier
+                    for i in range(num_shots):
+                        angle = (2 * math.pi / num_shots) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 12, math.sin(angle) * 12, 15, ProjectileType.WATER))
+                    self.player.burn_damage_timer = 60
+                    self.create_particles(boss_center_x, boss_bottom_y, WHITE, count=40, speed=10)
+                elif attack_choice == 2:
+                    # Pressure Vent: High-pressure steam blast
+                    push_dir = 1 if self.player.x > boss_center_x else -1
+                    self.player.vel_x += push_dir * 35
+                    self.player.take_damage(20 * multiplier, "magic")
+                    self.create_particles(boss_center_x, boss_bottom_y, (224, 224, 224), count=30, speed=15)
+                elif attack_choice == 3:
+                    # Steam Cloud: Damaging visibility-reducing fog
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 200, self.player.y - 200, 400, 400), 'timer': 240})
+                    self.player.blind_timer = 120
+                    self.create_particles(self.player.x, self.player.y, WHITE, count=100, speed=5)
+                elif attack_choice == 4:
+                    # Boiling Impact: Superheated strike
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 200 and dist_y < 200:
+                        self.player.take_damage(30 * multiplier, "magic")
+                        self.player.burn_damage_timer = 90
+                        self.create_particles(self.player.x, self.player.y, (255, 255, 255), count=25)
+                self.boss.special_attack_cooldown = 160
+
+            elif self.boss.type == BossType.ASH:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Ash Storm: Damages and blinds players
+                    self.player.take_damage(15 * multiplier, "magic")
+                    self.player.blind_timer = 180
+                    self.create_particles(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, (105, 105, 105), count=150, speed=15)
+                elif attack_choice == 2:
+                    # Suffocating Ash: Damage over time aura
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 150, self.player.y - 150, 300, 300), 'timer': 300})
+                    self.create_particles(self.player.x, self.player.y, (105, 105, 105), count=50, speed=2)
+                elif attack_choice == 3:
+                    # Volcanic Fallout: Falling ash projectiles
+                    for i in range(20 * multiplier):
+                        rx = random.randint(0, MAP_WIDTH)
+                        self.projectiles.append(Projectile(rx, 0, 0, 7, 10, ProjectileType.FIRE, color=(105, 105, 105)))
+                elif attack_choice == 4:
+                    # Cinder Wave: Burning ash wave
+                    num_shots = 12 * multiplier
+                    for i in range(num_shots):
+                        angle = math.pi + (math.pi / num_shots) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 9, math.sin(angle) * 9, 12, ProjectileType.FIRE, color=(255, 69, 0)))
+                    self.player.burn_damage_timer = 60
+                self.boss.special_attack_cooldown = 180
+
+            elif self.boss.type == BossType.SNOW:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Snow Barrage: Heavy snow impacts slow players
+                    for i in range(12 * multiplier):
+                        angle = math.atan2(self.player.y - boss_bottom_y, self.player.x - boss_center_x)
+                        angle += random.uniform(-0.5, 0.5)
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 10, math.sin(angle) * 10, 12, ProjectileType.ICE))
+                    self.player.slow_timer = 120
+                    self.create_particles(boss_center_x, boss_bottom_y, WHITE, count=30)
+                elif attack_choice == 2:
+                    # Whiteout Blast: AoE cold damage with blindness
+                    self.player.take_damage(20 * multiplier, "magic")
+                    self.player.blind_timer = 180
+                    self.create_particles(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, (255, 250, 250), count=180, speed=20)
+                elif attack_choice == 3:
+                    # Frost Drift: Moving cold damage zone
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 100, MAP_HEIGHT - 60, 200, 60), 'timer': 240})
+                    self.player.slow_timer = 60
+                elif attack_choice == 4:
+                    # Snow Crush: High-impact freezing attack
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 200 and dist_y < 200:
+                        self.player.take_damage(35 * multiplier, "magic")
+                        self.player.stun_timer = 90
+                        self.create_particles(self.player.x, self.player.y, CYAN, count=40)
+                self.boss.special_attack_cooldown = 180
+
+            elif self.boss.type == BossType.BLACK_ICE:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Shadow Frost: Dark ice damage over time
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 120, self.player.y - 120, 240, 240), 'timer': 240})
+                    self.player.slow_timer = 60
+                    self.create_particles(self.player.x, self.player.y, (20, 20, 40), count=30)
+                elif attack_choice == 2:
+                    # Fracture Freeze: Freezes then shatters ice
+                    self.player.stun_timer = 60
+                    num_shots = 16 * multiplier
+                    for i in range(num_shots):
+                        angle = (2 * math.pi / num_shots) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 12, math.sin(angle) * 12, 15, ProjectileType.ICE, color=(0, 0, 0)))
+                    self.create_particles(boss_center_x, boss_bottom_y, (100, 100, 255), count=40)
+                elif attack_choice == 3:
+                    # Obsidian Slip: Slippery zone with damage
+                    for i in range(3 * multiplier):
+                        rx = random.randint(200, MAP_WIDTH - 200)
+                        self.fire_zones.append({'rect': pygame.Rect(rx, MAP_HEIGHT - 60, 300, 60), 'timer': 300})
+                    self.player.slow_timer = 120
+                elif attack_choice == 4:
+                    # Black Glacier: Massive AoE ice attack
+                    self.screen_shake = 50
+                    for i in range(10 * multiplier):
+                        rx = random.randint(0, MAP_WIDTH)
+                        self.projectiles.append(Projectile(rx, 0, 0, 15, 35, ProjectileType.ICE, color=(20, 20, 40)))
+                    self.create_particles(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, (0, 0, 20), count=100, speed=10)
+                self.boss.special_attack_cooldown = 200
+
+            elif self.boss.type == BossType.THUNDERSTORM:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Chain Lightning Burst: Targeted fast bolts
+                    for i in range(8 * multiplier):
+                        angle = math.atan2(self.player.y - boss_bottom_y, self.player.x - boss_center_x)
+                        angle += random.uniform(-0.3, 0.3)
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 20, math.sin(angle) * 20, 10, ProjectileType.LIGHTNING))
+                    self.create_particles(boss_center_x, boss_bottom_y, YELLOW, count=20)
+                elif attack_choice == 2:
+                    # Thunderclap: Global stun and damage
+                    self.screen_shake = 60
+                    self.player.take_damage(15 * multiplier, "magic")
+                    self.player.stun_timer = 45
+                    self.create_particles(self.player.x, self.player.y, WHITE, count=50, speed=15)
+                elif attack_choice == 3:
+                    # Electro-field: Large persistent hazard
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 200, MAP_HEIGHT - 100, 400, 100), 'timer': 300})
+                    self.create_particles(self.player.x, MAP_HEIGHT - 50, CYAN, count=30)
+                elif attack_choice == 4:
+                    # Lightning Rain: Rapid strikes from above
+                    for i in range(15 * multiplier):
+                        lx = random.randint(0, MAP_WIDTH)
+                        self.lasers.append({'rect': pygame.Rect(lx, 0, 20, MAP_HEIGHT), 'timer': 40, 'fire_frame': 15})
+                self.boss.special_attack_cooldown = 150
+
+            elif self.boss.type == BossType.FOG:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Fog Obscuring Mist: Reduces visibility and damages
+                    self.player.blind_timer = 300
+                    self.player.take_damage(15 * multiplier, "magic")
+                    self.create_particles(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, (211, 211, 211), count=200, speed=10)
+                elif attack_choice == 2:
+                    # Fog Ambush: Sudden strike from concealment
+                    self.boss.x = self.player.x + random.choice([-150, 150])
+                    self.boss.y = self.player.y - 100
+                    self.player.take_damage(25 * multiplier, "magic")
+                    self.create_particles(self.player.x, self.player.y, (200, 200, 200), count=50)
+                elif attack_choice == 3:
+                    # Mist Trap: Slowing damage zone
+                    for i in range(4 * multiplier):
+                        rx = self.player.x + random.randint(-400, 400)
+                        ry = self.player.y + random.randint(-200, 200)
+                        self.fire_zones.append({'rect': pygame.Rect(rx, ry, 200, 200), 'timer': 240})
+                elif attack_choice == 4:
+                    # Phantom Strike: Random player attack
+                    for i in range(4 * multiplier):
+                        side = random.choice(['left', 'right', 'top'])
+                        if side == 'left':
+                            px, py = self.player.x - 400, self.player.y
+                            vx, vy = 15, 0
+                        elif side == 'right':
+                            px, py = self.player.x + 400, self.player.y
+                            vx, vy = -15, 0
+                        else:
+                            px, py = self.player.x, self.player.y - 400
+                            vx, vy = 0, 15
+                        self.projectiles.append(Projectile(px, py, vx, vy, 15, ProjectileType.WIND, color=(200, 200, 200)))
+                self.boss.special_attack_cooldown = 180
+
+            elif self.boss.type == BossType.RAIN:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # RainRainstorm: Constant rain of small projectiles
+                    for i in range(25 * multiplier):
+                        rx = random.randint(0, MAP_WIDTH)
+                        self.projectiles.append(Projectile(rx, 0, 0, 12, 6, ProjectileType.WATER))
+                    self.player.slow_timer = 90
+                elif attack_choice == 2:
+                    # Downpour Slam: Heavy water impact
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 200 and dist_y < 200:
+                        self.player.take_damage(40 * multiplier, "magic")
+                        self.player.stun_timer = 60
+                        self.screen_shake = 25
+                        self.create_particles(self.player.x, self.player.y, BLUE, count=50, speed=10)
+                elif attack_choice == 3:
+                    # Flood Rush: Water knockback attack
+                    push_dir = 1 if self.player.x > boss_center_x else -1
+                    self.player.vel_x += push_dir * 35
+                    self.player.take_damage(15 * multiplier, "magic")
+                    self.create_particles(boss_center_x, boss_bottom_y, BLUE, count=60, speed=20)
+                elif attack_choice == 4:
+                    # Soaked Ground: Slows and damages players
+                    self.fire_zones.append({'rect': pygame.Rect(0, MAP_HEIGHT - 120, MAP_WIDTH, 120), 'timer': 300})
+                    self.player.slow_timer = 120
+                self.boss.special_attack_cooldown = 140
+
+            elif self.boss.type == BossType.HEATWAVE:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Scorch Pulse: Burning AoE
+                    self.fire_zones.append({'rect': pygame.Rect(boss_center_x - 300, boss_bottom_y - 300, 600, 600), 'timer': 120})
+                    self.create_particles(boss_center_x, boss_bottom_y, ORANGE, count=40, speed=10)
+                elif attack_choice == 2:
+                    # Solar Flash: Blinds and burns players
+                    self.player.blind_timer = 120
+                    self.player.burn_damage_timer = 60
+                    self.create_particles(self.player.x, self.player.y, YELLOW, count=30, size=10)
+                elif attack_choice == 3:
+                    # Heat Collapse: Exhausts and damages players
+                    self.player.take_damage(30 * multiplier, "fire")
+                    self.player.slow_timer = 120
+                    self.screen_shake = 20
+                    self.create_particles(self.player.x, self.player.y, RED, count=25)
+                elif attack_choice == 4:
+                    # Infernal Aura: Constant heat damage
+                    self.fire_zones.append({'rect': pygame.Rect(boss_center_x - 150, boss_bottom_y - 150, 300, 300), 'timer': 480})
+                    self.create_particles(boss_center_x, boss_bottom_y, LAVA_RED, count=50)
+                self.boss.special_attack_cooldown = 160
+
+            elif self.boss.type == BossType.DROUGHT:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Wither Strike: Reduces healing and deals damage
+                    dist_x = abs(self.player.x - boss_center_x)
+                    if dist_x < 250:
+                        self.player.take_damage(25 * multiplier, "physical")
+                        self.player.wither_timer = 300 # 5 seconds
+                        self.create_particles(self.player.x, self.player.y, BROWN, count=30)
+                elif attack_choice == 2:
+                    # Desolation Wave: Weakens players (slow + damage)
+                    num_shots = 12 * multiplier
+                    for i in range(num_shots):
+                        angle = (2 * math.pi / num_shots) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 7, math.sin(angle) * 7, 10, ProjectileType.EARTH))
+                    self.player.slow_timer = 120
+                    self.create_particles(boss_center_x, boss_bottom_y, (210, 180, 140), count=40)
+                elif attack_choice == 3:
+                    # Sunburn: Fire DoT
+                    self.player.burn_damage_timer = 180
+                    self.create_particles(self.player.x, self.player.y, ORANGE, count=20)
+                elif attack_choice == 4:
+                    # Dry Zone: Debuff area (Slow + Wither)
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 150, MAP_HEIGHT - 100, 300, 100), 'timer': 240})
+                    self.player.wither_timer = 120
+                self.boss.special_attack_cooldown = 180
+
+            elif self.boss.type == BossType.HURRICANE:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Tornado Spin: Pulls and damages players
+                    dist_x = boss_center_x - self.player.x
+                    dist_y = boss_bottom_y - self.player.y
+                    angle = math.atan2(dist_y, dist_x)
+                    pull_force = 20
+                    self.player.vel_x += math.cos(angle) * pull_force
+                    self.player.vel_y += math.sin(angle) * pull_force
+                    if abs(dist_x) < 150 and abs(dist_y) < 150:
+                        self.player.take_damage(15 * multiplier, "magic")
+                    self.create_particles(boss_center_x, boss_bottom_y, (70, 130, 180), count=40, speed=15)
+                elif attack_choice == 2:
+                    # Cyclone Crash: High-damage wind slam
+                    dist_x = abs(self.player.x - boss_center_x)
+                    if dist_x < 250:
+                        self.player.take_damage(45 * multiplier, "physical")
+                        self.player.vel_y -= 15
+                        self.screen_shake = 30
+                        self.create_particles(self.player.x, self.player.y, WHITE, count=50, speed=12)
+                elif attack_choice == 3:
+                    # Wind Barrage: Repeated gust attacks
+                    for i in range(15 * multiplier):
+                        angle = math.atan2(self.player.y - boss_bottom_y, self.player.x - boss_center_x)
+                        angle += random.uniform(-0.5, 0.5)
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 18, math.sin(angle) * 18, 8, ProjectileType.WIND))
+                elif attack_choice == 4:
+                    # Eye of the Storm: Central damage zone
+                    self.fire_zones.append({'rect': pygame.Rect(boss_center_x - 300, boss_bottom_y - 300, 600, 600), 'timer': 180})
+                    # Safe spot visual? No, the prompt says "damage zone"
+                    self.create_particles(boss_center_x, boss_bottom_y, (135, 206, 250), count=60)
+                self.boss.special_attack_cooldown = 150
+
+            elif self.boss.type == BossType.ACID:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Acid Spray: Corrosive cone attack
+                    angle = math.atan2(self.player.y - boss_bottom_y, self.player.x - boss_center_x)
+                    num_sprays = 10 * multiplier
+                    for i in range(num_sprays):
+                        spread = (i - num_sprays // 2) * 0.15
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle + spread) * 12, math.sin(angle + spread) * 12, 12, ProjectileType.POISON, color=(191, 255, 0)))
+                elif attack_choice == 2:
+                    # Melting Touch: Armor-destroying strike
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 180 and dist_y < 180:
+                        self.player.take_damage(20 * multiplier, "acid")
+                        self.player.corrosion_timer = 420 # 7 seconds
+                        self.create_particles(self.player.x, self.player.y, (191, 255, 0), count=30)
+                elif attack_choice == 3:
+                    # Acid Pool: Persistent damage zone
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 120, MAP_HEIGHT - 60, 240, 60), 'timer': 480, 'type': 'acid'})
+                elif attack_choice == 4:
+                    # Corrosion Wave: AoE armor reduction
+                    num_shots = 16 * multiplier
+                    for i in range(num_shots):
+                        angle = (2 * math.pi / num_shots) * i
+                        p = Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 8, math.sin(angle) * 8, 5, ProjectileType.POISON, color=(173, 255, 47))
+                        self.projectiles.append(p)
+                    # Instant small AoE around boss
+                    dist_x = abs(self.player.x - boss_center_x)
+                    if dist_x < 350:
+                        self.player.corrosion_timer = max(self.player.corrosion_timer, 180)
+                self.boss.special_attack_cooldown = 160
+
+            elif self.boss.type == BossType.SHADOW:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Shadow Slash: Strikes a player with dark tendrils
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 250 and dist_y < 250:
+                        self.player.take_damage(20 * multiplier, "shadow")
+                        self.create_particles(self.player.x, self.player.y, (30, 30, 30), count=25)
+                elif attack_choice == 2:
+                    # Umbra Wave: Sends a wave of shadow energy forward
+                    num_waves = 12 * multiplier
+                    for i in range(num_waves):
+                        angle = (math.pi / num_waves) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 10, math.sin(angle) * 10, 15, ProjectileType.DARK))
+                elif attack_choice == 3:
+                    # Cloak of Shadows: Briefly hides and strikes
+                    self.boss.x = self.player.x + random.choice([-150, 150])
+                    self.player.take_damage(25 * multiplier, "shadow")
+                    self.create_particles(boss_center_x, boss_bottom_y, BLACK, count=40)
+                elif attack_choice == 4:
+                    # Shadow Grasp: Roots the player in place
+                    self.player.root_timer = 150
+                    self.player.take_damage(10 * multiplier, "shadow")
+                    self.create_particles(self.player.x, self.player.y, (20, 0, 40), count=20)
+                self.boss.special_attack_cooldown = 180
+
+            elif self.boss.type == BossType.DARKNESS:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Void Blast: Dark explosion
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 150, self.player.y - 150, 300, 300), 'timer': 120, 'type': 'dark'})
+                    self.player.take_damage(30 * multiplier, "dark")
+                    self.create_particles(self.player.x, self.player.y, BLACK, count=50)
+                elif attack_choice == 2:
+                    # Dark Pulse: Visibility reduction
+                    self.player.blind_timer = 180
+                    num_shots = 20 * multiplier
+                    for i in range(num_shots):
+                        angle = (2 * math.pi / num_shots) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 8, math.sin(angle) * 8, 10, ProjectileType.DARK))
+                elif attack_choice == 3:
+                    # Consume Light: Sap energy and health
+                    dist = math.hypot(self.player.x - boss_center_x, self.player.y - boss_bottom_y)
+                    if dist < 400:
+                        drain = 15 * multiplier
+                        self.player.take_damage(drain, "dark")
+                        self.boss.hp = min(self.boss.max_hp, self.boss.hp + drain)
+                        self.create_particles(self.player.x, self.player.y, PURPLE, count=20)
+                elif attack_choice == 4:
+                    # Shadow Step Strike: Teleport behind player
+                    self.boss.x = self.player.x - (100 if self.player.x > boss_center_x else -100)
+                    self.player.take_damage(20 * multiplier, "dark")
+                    self.create_particles(self.boss.x, self.boss.y, BLACK, count=30)
+                self.boss.special_attack_cooldown = 200
+
+            elif self.boss.type == BossType.VOID:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Abyss Strike: Opens a void under player
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 100, MAP_HEIGHT - 60, 200, 60), 'timer': 150, 'type': 'dark'})
+                    self.player.take_damage(25 * multiplier, "void")
+                    self.create_particles(self.player.x, MAP_HEIGHT - 30, (10, 0, 20), count=40)
+                elif attack_choice == 2:
+                    # Dark Rift: Pulls players toward boss
+                    dist_x = boss_center_x - self.player.x
+                    dist_y = boss_bottom_y - self.player.y
+                    angle = math.atan2(dist_y, dist_x)
+                    pull_force = 35
+                    self.player.vel_x += math.cos(angle) * pull_force
+                    self.player.vel_y += math.sin(angle) * pull_force
+                    self.create_particles(boss_center_x, boss_bottom_y, (0, 0, 0), count=60)
+                elif attack_choice == 3:
+                    # Void Wave: Spreading shockwave
+                    num_shots = 24 * multiplier
+                    for i in range(num_shots):
+                        angle = (2 * math.pi / num_shots) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 12, math.sin(angle) * 12, 12, ProjectileType.DARK, color=(20, 0, 40)))
+                elif attack_choice == 4:
+                    # Null Zone: Weakens attacks (simulated with slow and blind)
+                    self.player.slow_timer = 120
+                    self.player.blind_timer = 120
+                    self.create_particles(self.player.x, self.player.y, (75, 0, 130), count=30)
+                self.boss.special_attack_cooldown = 220
+
+            elif self.boss.type == BossType.CHAOS:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Chaos Surge: Unleashes chaotic energy damaging random areas
+                    for _ in range(8 * multiplier):
+                        rx = random.randint(0, MAP_WIDTH)
+                        ry = random.randint(0, MAP_HEIGHT)
+                        self.fire_zones.append({'rect': pygame.Rect(rx, ry, 100, 100), 'timer': 60, 'type': random.choice(['fire', 'poison', 'dark'])})
+                elif attack_choice == 2:
+                    # Anomaly Strike: Unpredictable effects
+                    self.player.take_damage(20 * multiplier, "chaos")
+                    effect = random.randint(1, 4)
+                    if effect == 1: self.player.slow_timer = 120
+                    elif effect == 2: self.player.blind_timer = 120
+                    elif effect == 3: self.player.stun_timer = 30
+                    elif effect == 4: self.player.vel_y -= 20 # Random toss
+                    self.create_particles(self.player.x, self.player.y, (255, 20, 147), count=30)
+                elif attack_choice == 3:
+                    # Chaotic Wave: Wide AoE stuns or damages
+                    num_waves = 15 * multiplier
+                    for i in range(num_waves):
+                        angle = (2 * math.pi / num_waves) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 7, math.sin(angle) * 7, 10, ProjectileType.CURSE))
+                elif attack_choice == 4:
+                    # Entropy Blast: Reduces defenses (corrosion) and damages
+                    self.player.take_damage(25 * multiplier, "chaos")
+                    self.player.corrosion_timer = 300
+                    self.create_particles(boss_center_x, boss_bottom_y, (128, 0, 128), count=40)
+                self.boss.special_attack_cooldown = 180
+
+            elif self.boss.type == BossType.CORRUPTION:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Corrupting Strike: Damage and debuff
+                    dist_x = abs(self.player.x - boss_center_x)
+                    if dist_x < 200:
+                        self.player.take_damage(25 * multiplier, "corruption")
+                        self.player.wither_timer = 240
+                        self.create_particles(self.player.x, self.player.y, (75, 0, 130), count=25)
+                elif attack_choice == 2:
+                    # Blighted Wave: Damage and slow
+                    for i in range(10 * multiplier):
+                        angle = math.atan2(self.player.y - boss_bottom_y, self.player.x - boss_center_x) + random.uniform(-0.3, 0.3)
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 9, math.sin(angle) * 9, 15, ProjectileType.BIO, color=(128, 0, 128)))
+                    self.player.slow_timer = 120
+                elif attack_choice == 3:
+                    # Corruption Aura: Constant nearby damage
+                    dist = math.hypot(self.player.x - boss_center_x, self.player.y - boss_bottom_y)
+                    if dist < 350:
+                        self.player.take_damage(5 * multiplier, "corruption")
+                        self.player.poison_timer = max(self.player.poison_timer, 60)
+                elif attack_choice == 4:
+                    # Rotting Slash: DoT damage
+                    dist_x = abs(self.player.x - boss_center_x)
+                    if dist_x < 250:
+                        self.player.take_damage(20 * multiplier, "corruption")
+                        self.player.poison_timer = 400
+                        self.create_particles(self.player.x, self.player.y, (107, 142, 35), count=30)
+                self.boss.special_attack_cooldown = 160
+
+            elif self.boss.type == BossType.CURSE:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Hex Strike: Periodic damage
+                    self.player.take_damage(15 * multiplier, "curse")
+                    self.player.wither_timer = 600 # Long DoT
+                    self.create_particles(self.player.x, self.player.y, (139, 0, 139), count=20)
+                elif attack_choice == 2:
+                    # Malediction: Multiple debuffs
+                    dist_x = abs(self.player.x - boss_center_x)
+                    if dist_x < 400:
+                        self.player.slow_timer = 180
+                        self.player.blind_timer = 120
+                        self.player.take_damage(10 * multiplier, "curse")
+                elif attack_choice == 3:
+                    # Cursed Ground: Damaging zone
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 150, MAP_HEIGHT - 60, 300, 60), 'timer': 300, 'type': 'dark'})
+                    self.create_particles(self.player.x, MAP_HEIGHT - 30, (75, 0, 130), count=40)
+                elif attack_choice == 4:
+                    # Wraith Touch: Reduced healing (simulated) and damage
+                    self.player.take_damage(25 * multiplier, "curse")
+                    self.player.wither_timer = max(self.player.wither_timer, 300)
+                    self.create_particles(self.player.x, self.player.y, (40, 40, 40), count=25)
+                self.boss.special_attack_cooldown = 190
+
+            elif self.boss.type == BossType.BLOOD:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Blood Strike: Drain health
+                    dist_x = abs(self.player.x - boss_center_x)
+                    if dist_x < 200:
+                        drain = 30 * multiplier
+                        self.player.take_damage(drain, "blood")
+                        self.boss.hp = min(self.boss.max_hp, self.boss.hp + drain // 2)
+                        self.create_particles(self.player.x, self.player.y, RED, count=40)
+                elif attack_choice == 2:
+                    # Sanguine Wave: Damages nearby
+                    num_waves = 12 * multiplier
+                    for i in range(num_waves):
+                        angle = (2 * math.pi / num_waves) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 8, math.sin(angle) * 8, 15, ProjectileType.BIO, color=RED))
+                elif attack_choice == 3:
+                    # Hemorrhage: Bleeding DoT
+                    self.player.take_damage(10 * multiplier, "blood")
+                    self.player.wither_timer = 480
+                    self.create_particles(self.player.x, self.player.y, (139, 0, 0), count=30)
+                elif attack_choice == 4:
+                    # Blood Curse: DoT and Boss Heal
+                    self.player.wither_timer = 300
+                    self.boss.hp = min(self.boss.max_hp, self.boss.hp + 20 * multiplier)
+                    self.create_particles(boss_center_x, boss_bottom_y, RED, count=25)
+                self.boss.special_attack_cooldown = 170
+
+            elif self.boss.type == BossType.SIN:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Sinful Lash: Whips player with dark energy
+                    dist_x = abs(self.player.x - boss_center_x)
+                    if dist_x < 300:
+                        self.player.take_damage(20 * multiplier, "sin")
+                        self.player.wither_timer = 180
+                        self.create_particles(self.player.x, self.player.y, (75, 0, 130), count=20)
+                elif attack_choice == 2:
+                    # Guilt Strike: Damage and slow
+                    self.player.take_damage(15 * multiplier, "sin")
+                    self.player.slow_timer = 90
+                elif attack_choice == 3:
+                    # Pride Wave: AoE speed reduction
+                    self.player.slow_timer = 180
+                    self.player.take_damage(10 * multiplier, "sin")
+                    self.create_particles(boss_center_x, boss_bottom_y, GOLD, count=30)
+                elif attack_choice == 4:
+                    # Envy Touch: Weakens player and deals harm
+                    self.player.take_damage(25 * multiplier, "sin")
+                    self.player.blind_timer = 150
+                    self.create_particles(self.player.x, self.player.y, GREEN, count=25)
+                self.boss.special_attack_cooldown = 180
+
+            elif self.boss.type == BossType.FEAR:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Terror Blast: AoE fear and damage
+                    dist = math.hypot(self.player.x - boss_center_x, self.player.y - boss_bottom_y)
+                    if dist < 400:
+                        self.player.take_damage(20 * multiplier, "fear")
+                        self.player.stun_timer = 40
+                        self.create_particles(self.player.x, self.player.y, (40, 0, 0), count=40)
+                elif attack_choice == 2:
+                    # Nightmares: Targets player, stun and DoT
+                    self.player.stun_timer = 60
+                    self.player.wither_timer = 240
+                    self.player.take_damage(15 * multiplier, "fear")
+                elif attack_choice == 3:
+                    # Panic Wave: Random movement and damage
+                    self.player.take_damage(10 * multiplier, "fear")
+                    self.player.vel_x += random.choice([-25, 25])
+                    self.player.blind_timer = 90
+                elif attack_choice == 4:
+                    # Dread Aura: Reduces attack efficiency
+                    self.player.blind_timer = 180
+                    self.player.slow_timer = 120
+                    self.create_particles(boss_center_x, boss_bottom_y, (30, 0, 0), count=50)
+                self.boss.special_attack_cooldown = 200
+
+            elif self.boss.type == BossType.GRAVITY:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Zero-G Field: Lowers gravity for the player
+                    self.player.vel_y -= 15
+                    self.create_particles(self.player.x, self.player.y, (200, 200, 255), count=30)
+                elif attack_choice == 2:
+                    # Gravity Well: Pulls players toward the boss
+                    dist_x = boss_center_x - self.player.x
+                    dist_y = boss_bottom_y - self.player.y
+                    angle = math.atan2(dist_y, dist_x)
+                    self.player.vel_x += math.cos(angle) * 30
+                    self.player.vel_y += math.sin(angle) * 20
+                elif attack_choice == 3:
+                    # Crushing Force: Slam player down
+                    self.player.vel_y += 50
+                    self.player.take_damage(20 * multiplier, "physical")
+                    self.screen_shake = 30
+                    self.create_particles(self.player.x, MAP_HEIGHT, GRAY, count=40)
+                elif attack_choice == 4:
+                    # Orbital Strike: Circular projectiles
+                    for i in range(12 * multiplier):
+                        angle = (2 * math.pi / 12) * i
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle) * 12, math.sin(angle) * 12, 15, ProjectileType.GRAVITY, color=(0, 0, 50)))
+                self.boss.special_attack_cooldown = 180
+
+            elif self.boss.type == BossType.INFECTION:
+                attack_choice = random.randint(1, 4)
+                if attack_choice == 1:
+                    # Infectious Slash: Spreading DoT
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 200 and dist_y < 200:
+                        self.player.take_damage(15 * multiplier, "poison")
+                        self.player.poison_timer = 480 # 8 seconds
+                        # "Spreading" effect: release small bio projectiles from hit location
+                        for i in range(6):
+                            angle = random.uniform(0, 2 * math.pi)
+                            self.projectiles.append(Projectile(self.player.x, self.player.y, math.cos(angle) * 4, math.sin(angle) * 4, 5, ProjectileType.BIO))
+                elif attack_choice == 2:
+                    # Plague Aura: Area disease damage
+                    self.fire_zones.append({'rect': pygame.Rect(self.player.x - 180, self.player.y - 180, 360, 360), 'timer': 240, 'type': 'poison'})
+                    self.create_particles(self.player.x, self.player.y, (139, 69, 19), count=20)
+                elif attack_choice == 3:
+                    # Contagion Burst: Spreads to nearby players (simulated by multi-burst)
+                    for i in range(3):
+                        offset_x = random.randint(-200, 200)
+                        offset_y = random.randint(-100, 100)
+                        self.fire_zones.append({'rect': pygame.Rect(self.player.x + offset_x - 100, self.player.y + offset_y - 100, 200, 200), 'timer': 120, 'type': 'poison'})
+                        num_shots = 6 * multiplier
+                        for j in range(num_shots):
+                            angle = (2 * math.pi / num_shots) * j
+                            self.projectiles.append(Projectile(self.player.x + offset_x, self.player.y + offset_y, math.cos(angle) * 6, math.sin(angle) * 6, 8, ProjectileType.BIO))
+                elif attack_choice == 4:
+                    # Rotting Wound: Long-lasting damage
+                    dist_x = abs(self.player.x - boss_center_x)
+                    dist_y = abs(self.player.y - boss_bottom_y)
+                    if dist_x < 150 and dist_y < 150:
+                        self.player.take_damage(25 * multiplier, "poison")
+                        self.player.poison_timer = 720 # 12 seconds
+                        self.player.slow_timer = 180
+                        self.create_particles(self.player.x, self.player.y, (107, 142, 35), count=25)
+                self.boss.special_attack_cooldown = 170
+
+            else:
+                # Generic fallback for other 100+ types
+                attack_choice = random.randint(1, 3)
+                if attack_choice == 1:
+                    # Basic spread using the boss's defined projectile type
+                    proj_type = BOSS_DATA[self.boss.type]['proj']
+                    for i in range(5 * multiplier):
+                        angle = math.atan2(self.player.y - boss_bottom_y, self.player.x - boss_center_x)
+                        angle += random.uniform(-0.5, 0.5)
+                        self.projectiles.append(Projectile(boss_center_x, boss_bottom_y, math.cos(angle)*8, math.sin(angle)*8, 10, proj_type))
+                elif attack_choice == 2:
+                    # Random lasers
+                    for i in range(2 * multiplier):
+                        self.lasers.append({'rect': pygame.Rect(random.randint(0, MAP_WIDTH), 0, 20, MAP_HEIGHT), 'timer': 60, 'fire_frame': 30})
+                elif attack_choice == 3:
+                    # Minion wave
+                    for _ in range(3 * multiplier):
+                        self.minions.append(Minion(random.randint(0, MAP_WIDTH), 100))
+                self.boss.special_attack_cooldown = 150
+
     def create_particles(self, x, y, color, count=10, speed=5, size=5, lifetime=30):
         for _ in range(count):
             vel_x = random.uniform(-speed, speed)
             vel_y = random.uniform(-speed, speed)
             self.particles.append(Particle(x, y, vel_x, vel_y, color, random.randint(lifetime//2, lifetime), size))
+
+    def dragon_boss_ai(self):
+        if not self.boss or not self.player:
+            return
+            
+        self.boss.update(self)
+        
+        # Dragon-specific attack logic
+        if self.boss.attack_timer > 0:
+            self.boss.attack_timer -= 1
+            return
+            
+        # Select attack based on phase
+        if self.boss.phase == 1:
+            attacks = ["void_fang", "shadow_breath", "abyss_dive", "dark_claw", "soul_rend"]
+            weights = [0.25, 0.25, 0.2, 0.2, 0.1]
+        elif self.boss.phase == 2:
+            attacks = ["frost_cataclysm", "glacial_breath", "blizzard_dominion", "icequake", "zero_field"]
+            weights = [0.2, 0.2, 0.2, 0.2, 0.2]
+        else: # Phase 3
+            # Phase 3 has 10 attacks, 5 AOE, 5 Aimed
+            attacks = ["crimson_inferno", "bloodfire_storm", "scarlet_cataclysm", "hellflare_domain", "apocalypse_roar",
+                       "scarlet_obliteration", "blood_claw", "infernal_spear", "execution_dive", "judgment"]
+            weights = [0.1] * 10
+            
+        self.boss.current_attack = random.choices(attacks, weights=weights)[0]
+        
+        # Execute attack
+        attack_func = getattr(self.boss, f"attack_{self.boss.current_attack}", None)
+        if attack_func:
+            attack_func(self)
+        
+        # Cooldown between attacks
+        cooldowns = {1: 120, 2: 90, 3: 60}
+        self.boss.attack_timer = cooldowns.get(self.boss.phase, 120)
 
     def trigger_hit(self, x, y, color, shake=5):
         self.create_particles(x, y, color)
@@ -3093,10 +5531,15 @@ class Game:
     def update(self):
         self.menu.update_notification()
         
-        if self.paused or self.state != GameState.PLAYING:
+        if self.paused or self.state not in [GameState.PLAYING, GameState.DRAGON_FIGHT]:
             return
             
         self.run_time = pygame.time.get_ticks() - self.start_ticks
+        
+        if self.state == GameState.DRAGON_FIGHT:
+            self.dragon_timer -= 1
+            if self.dragon_timer <= 0:
+                self.state = GameState.GAME_OVER
             
         # Update particles
         for p in self.particles[:]:
@@ -3121,7 +5564,7 @@ class Game:
             
             return  # Pause other game logic during transition
             
-        if self.state == GameState.PLAYING and self.player and self.boss:
+        if self.state in [GameState.PLAYING, GameState.DRAGON_FIGHT] and self.player and self.boss:
             mouse_pos = pygame.mouse.get_pos()
             self.player.update(self.platforms, self.walls, self.temp_walls, self.fire_zones, mouse_pos, self.camera_x, self.camera_y, self)
             
@@ -3147,14 +5590,17 @@ class Game:
                     self.boss.visual_y = self.boss.y
             
             if not miniboss_active:
-                self.boss.update(self)
-                self.boss_ai()
+                if isinstance(self.boss, DragonBoss):
+                    self.dragon_boss_ai()
+                else:
+                    self.boss.update(self)
+                    self.boss_ai()
             
             for proj in self.projectiles[:]:
                 proj.update(self)
                 proj_rect = pygame.Rect(proj.x - proj.radius, proj.y - proj.radius, proj.radius * 2, proj.radius * 2)
                 
-                if proj.type == 'charged_attack':
+                if proj.type == ProjectileType.CHARGED_ATTACK:
                     boss_rect = pygame.Rect(self.boss.x, self.boss.y, self.boss.width, self.boss.height)
                     if proj_rect.colliderect(boss_rect) and not miniboss_active:
                         if not self.boss_invincible:
@@ -3164,12 +5610,19 @@ class Game:
                             self.player.on_deal_damage(damage)
                             self.total_damage_dealt += damage
                             
-                            # Award currency: 2 credits per 10 damage
-                            credits_earned = (self.total_damage_dealt // 10) * 2
-                            previous_credits = ((self.total_damage_dealt - damage) // 10) * 2
-                            new_credits = credits_earned - previous_credits
-                            if new_credits > 0:
-                                self.currency += new_credits
+                            # Award currency
+                            if isinstance(self.boss, DragonBoss):
+                                rate = 15 if self.boss.phase == 1 else (12 if self.boss.phase == 2 else 8)
+                                credits_earned = self.total_damage_dealt // rate
+                                previous_credits = (self.total_damage_dealt - damage) // rate
+                                self.currency += (credits_earned - previous_credits)
+                            else:
+                                # Award currency: 2 credits per 10 damage
+                                credits_earned = (self.total_damage_dealt // 10) * 2
+                                previous_credits = ((self.total_damage_dealt - damage) // 10) * 2
+                                new_credits = credits_earned - previous_credits
+                                if new_credits > 0:
+                                    self.currency += new_credits
                         self.projectiles.remove(proj)
                         continue
                     
@@ -3199,16 +5652,51 @@ class Game:
                         continue
                 
                 player_rect = pygame.Rect(self.player.x, self.player.y, self.player.width, self.player.height)
-                if proj_rect.colliderect(player_rect) and not self.player.invulnerable and proj.type != 'charged_attack' and not self.godmode:
-                    damage_type = "magic" if proj.type in ['fireball', 'laser'] else "normal"
+                if proj_rect.colliderect(player_rect) and not self.player.invulnerable and proj.type != ProjectileType.CHARGED_ATTACK and not self.godmode:
+                    damage_type = "magic" if proj.type in [ProjectileType.FIRE, ProjectileType.LIGHTNING, ProjectileType.PLASMA, ProjectileType.MAGIC] else "normal"
                     self.player.take_damage(proj.damage, damage_type, self.boss)
                     self.trigger_hit(self.player.x + self.player.width // 2, self.player.y + self.player.height // 2, BLUE, shake=8)
+                    
+                    # Apply debuffs based on projectile type or boss data
+                    boss_info = BOSS_DATA.get(self.boss.type, {})
+                    debuff = boss_info.get('debuff')
+                    
+                    if proj.type == ProjectileType.ICE:
+                        self.player.freeze_timer = 120
+                    elif proj.type == ProjectileType.WATER:
+                        self.player.slow_timer = 180
+                        self.player.vel_x += 10 if proj.vel_x > 0 else -10
+                    elif proj.type == ProjectileType.POISON:
+                        self.player.poison_timer = 300
+                    elif proj.type == ProjectileType.DARK:
+                        self.player.blind_timer = 180
+                    elif proj.type == ProjectileType.LIGHT:
+                        self.player.stun_timer = 60
+                    elif proj.type == ProjectileType.NATURE:
+                        self.player.root_timer = 120
+                    elif proj.type == ProjectileType.LAVA:
+                        self.player.burn_damage_timer = 30
+                        self.player.vel_y = -10
+                        self.player.vel_x += 15 if proj.vel_x > 0 else -15
+                    elif proj.type == ProjectileType.BIO:
+                        self.player.slow_timer = 120
+                    
+                    # Fallback to boss-specific debuff if projectile type didn't trigger one
+                    if debuff == "stun" and self.player.stun_timer == 0:
+                        self.player.stun_timer = 40
+                    elif debuff == "blind" and self.player.blind_timer == 0:
+                        self.player.blind_timer = 120
+                    elif debuff == "burn" and self.player.burn_damage_timer == 0:
+                        self.player.burn_damage_timer = 30
+                    elif debuff == "slow" and self.player.slow_timer == 0:
+                        self.player.slow_timer = 120
+
                     if proj in self.projectiles:
                         self.projectiles.remove(proj)
-                    if proj.type == 'fireball':
+                    if proj.type == ProjectileType.FIRE:
                         self.fire_zones.append({'rect': pygame.Rect(proj.x - 40, proj.y - 20, 80, 40), 'timer': 900})
                 elif proj.y > MAP_HEIGHT or proj.x < 0 or proj.x > MAP_WIDTH:
-                    if proj.type == 'fireball':
+                    if proj.type == ProjectileType.FIRE:
                         landed = False
                         fireball_rect = pygame.Rect(proj.x - 40, proj.y - 20, 80, 40)
                         for platform in self.platforms:
@@ -3218,7 +5706,7 @@ class Game:
                                 break
                         if not landed and proj.y > MAP_HEIGHT - 100:
                             self.fire_zones.append({'rect': pygame.Rect(proj.x - 40, MAP_HEIGHT - 90, 80, 40), 'timer': 900})
-                    if proj.type != 'charged_attack' and proj in self.projectiles:
+                    if proj.type != ProjectileType.CHARGED_ATTACK and proj in self.projectiles:
                         self.projectiles.remove(proj)
             
             for minion in self.minions[:]:
@@ -3261,7 +5749,10 @@ class Game:
             for orb in self.healing_orbs[:]:
                 orb.update()
                 if pygame.Rect(orb.x - orb.radius, orb.y - orb.radius, orb.radius * 2, orb.radius * 2).colliderect(pygame.Rect(self.player.x, self.player.y, self.player.width, self.player.height)):
-                    self.player.hp = min(self.player.hp + orb.heal_amount, self.player.max_hp)
+                    heal = orb.heal_amount
+                    if self.player.wither_timer > 0:
+                        heal *= 0.5
+                    self.player.hp = min(self.player.hp + heal, self.player.max_hp)
                     self.healing_orbs.remove(orb)
                     self.orb_spawn_timer = 0
             
@@ -3403,13 +5894,8 @@ class Game:
         if self.state == GameState.MAIN_MENU:
             option = self.menu.main_options[self.menu.selected]
             if option == "Start Game":
-                self.state = GameState.CHARACTER_SELECT
-                # Set selection to last used character if available
-                available_classes = ["Base"] + [cls for cls in self.menu.character_options if cls in self.unlocked_classes]
-                if self.selected_character in available_classes:
-                    self.menu.selected = available_classes.index(self.selected_character)
-                else:
-                    self.menu.selected = 0
+                self.state = GameState.MODE_SELECT
+                self.menu.selected = 0
             elif option == "Shop":
                 self.state = GameState.SHOP
                 self.shop.selected_index = 0
@@ -3424,6 +5910,17 @@ class Game:
             elif option == "Exit (F5)":
                 self.running = False
         
+        elif self.state == GameState.MODE_SELECT:
+            if self.menu.selected < len(self.menu.mode_options):
+                self.game_mode = self.menu.mode_options[self.menu.selected]
+                self.state = GameState.CHARACTER_SELECT
+                # Set selection to last used character if available
+                available_classes = ["Base"] + [cls for cls in self.menu.character_options if cls in self.unlocked_classes]
+                if self.selected_character in available_classes:
+                    self.menu.selected = available_classes.index(self.selected_character)
+                else:
+                    self.menu.selected = 0
+
         elif self.state == GameState.CHARACTER_SELECT:
             available_classes = ["Base"] + [cls for cls in self.menu.character_options if cls in self.unlocked_classes]
             if self.menu.selected < len(available_classes):
@@ -3499,11 +5996,12 @@ class Game:
 
                 # ESC - Context-dependent
                 if event.key == pygame.K_ESCAPE:
-                    if self.state == GameState.PLAYING:
+                    if self.state in [GameState.PLAYING, GameState.DRAGON_FIGHT]:
+                        self.last_state = self.state
                         self.state = GameState.PAUSED
                         self.menu.selected = 0
                     elif self.state == GameState.PAUSED:
-                        self.state = GameState.PLAYING
+                        self.state = self.last_state if hasattr(self, 'last_state') else GameState.PLAYING
                     elif self.state == GameState.SHOP:
                         self.state = GameState.MAIN_MENU
                         self.menu.selected = 0
@@ -3511,6 +6009,9 @@ class Game:
                         self.state = GameState.MAIN_MENU
                         self.menu.selected = 0
                     elif self.state == GameState.CHARACTER_SELECT:
+                        self.state = GameState.MODE_SELECT
+                        self.menu.selected = 0
+                    elif self.state == GameState.MODE_SELECT:
                         self.state = GameState.MAIN_MENU
                         self.menu.selected = 0
                     elif self.state == GameState.REBIND_KEYS:
@@ -3576,9 +6077,14 @@ class Game:
                 
                 # Main Menu
                 if self.state == GameState.MAIN_MENU:
-                    if event.key in [pygame.K_w, pygame.K_z, pygame.K_s]:
-                        direction = -1 if event.key in [pygame.K_w, pygame.K_z] else 1
-                        self.menu.navigate(direction, self.state)
+                    if event.key in [pygame.K_w, pygame.K_z, pygame.K_UP]:
+                        self.menu.navigate("UP", self.state)
+                    elif event.key in [pygame.K_s, pygame.K_DOWN]:
+                        self.menu.navigate("DOWN", self.state)
+                    elif event.key in [pygame.K_a, pygame.K_q, pygame.K_LEFT]:
+                        self.menu.navigate("LEFT", self.state)
+                    elif event.key in [pygame.K_d, pygame.K_RIGHT]:
+                        self.menu.navigate("RIGHT", self.state)
                     elif event.key == pygame.K_RETURN:
                         self.trigger_selection()
                 
@@ -3602,18 +6108,19 @@ class Game:
                         self.trigger_selection()
                 
                 # Pause Menu
-                elif self.state == GameState.PAUSED:
-                    if event.key in [pygame.K_w, pygame.K_z, pygame.K_s]:
-                        direction = -1 if event.key in [pygame.K_w, pygame.K_z] else 1
+                elif self.state in [GameState.PAUSED, GameState.DRAGON_FIGHT]:
+                    self.last_state = self.state
+                    if event.key in [pygame.K_w, pygame.K_z, pygame.K_s, pygame.K_UP, pygame.K_DOWN]:
+                        direction = -1 if event.key in [pygame.K_w, pygame.K_z, pygame.K_UP] else 1
                         self.menu.navigate(direction, self.state)
                     elif event.key == pygame.K_RETURN:
                         self.trigger_selection()
                 
                 # Shop
                 elif self.state == GameState.SHOP:
-                    if event.key in [pygame.K_w, pygame.K_z]:
+                    if event.key in [pygame.K_w, pygame.K_z, pygame.K_UP]:
                         self.shop.navigate(-1)
-                    elif event.key == pygame.K_s:
+                    elif event.key in [pygame.K_s, pygame.K_DOWN]:
                         self.shop.navigate(1)
                     elif event.key == pygame.K_b:
                         self.currency, msg = self.shop.buy_item(self.currency)
@@ -3631,8 +6138,8 @@ class Game:
                 
                 # Settings
                 elif self.state == GameState.SETTINGS:
-                    if event.key in [pygame.K_UP, pygame.K_DOWN, pygame.K_z]:
-                        direction = -1 if event.key in [pygame.K_UP, pygame.K_z] else 1
+                    if event.key in [pygame.K_w, pygame.K_z, pygame.K_s, pygame.K_UP, pygame.K_DOWN]:
+                        direction = -1 if event.key in [pygame.K_w, pygame.K_z, pygame.K_UP] else 1
                         self.menu.navigate(direction, self.state)
                     elif event.key in [pygame.K_LEFT, pygame.K_RIGHT]:
                         # Volume and Speed and Controls switch
@@ -3676,7 +6183,7 @@ class Game:
                         self.trigger_selection()
                 
                 # Gameplay controls
-                elif self.state == GameState.PLAYING:
+                elif self.state in [GameState.PLAYING, GameState.DRAGON_FIGHT]:
                     ctrl = self.menu.get_controls()
                     if event.key == ctrl['jump']:
                         self.player.jump()
@@ -3735,11 +6242,11 @@ class Game:
             
             if event.type == pygame.KEYUP:
                 ctrl = self.menu.get_controls()
-                if event.key == ctrl['parry'] and self.state == GameState.PLAYING and self.player:
+                if event.key == ctrl['parry'] and self.state in [GameState.PLAYING, GameState.DRAGON_FIGHT] and self.player:
                     self.player.parrying = False
             
             if event.type == pygame.MOUSEMOTION:
-                if self.state != GameState.PLAYING:
+                if self.state not in [GameState.PLAYING, GameState.DRAGON_FIGHT]:
                     for i, rect in enumerate(self.menu.menu_rects):
                         if rect.collidepoint(event.pos):
                             self.menu.selected = i
@@ -3748,7 +6255,7 @@ class Game:
                             break
 
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if self.state != GameState.PLAYING:
+                if self.state not in [GameState.PLAYING, GameState.DRAGON_FIGHT]:
                     mouse_pos = event.pos
                     # Scale mouse position if using SCALED (though pygame usually handles this, sometimes it needs manual if custom scaling)
                     # With pygame.SCALED, event.pos should be in logical coordinates.
@@ -3778,7 +6285,7 @@ class Game:
                                     else:
                                         self.menu.volume = min(100, self.menu.volume + 10)
                                     self.menu.settings_options[0] = f"Volume: {self.menu.volume}%"
-                                elif i == 1: # Speed
+                                elif i == 1: # Spee, GameState.DRAGON_FIGHT]d
                                     speeds = [0.5, 1.0, 1.5, 2.0]
                                     names = ["Slow", "Normal", "Fast", "Very Fast"]
                                     idx = speeds.index(self.menu.game_speed)
@@ -3803,7 +6310,7 @@ class Game:
                                 self.trigger_selection()
                             break
 
-                elif self.state == GameState.PLAYING and self.player and self.boss:
+                elif self.state in [GameState.PLAYING, GameState.DRAGON_FIGHT] and self.player and self.boss:
                     if event.button == 1:  # Left click - Basic attack
                         if self.player.basic_attack():
                             self.player.swing_timer = 15
@@ -3842,7 +6349,7 @@ class Game:
                     elif event.button == 3:  # Right click - Start charging
                         self.player.start_charging()
             
-            if event.type == pygame.MOUSEBUTTONUP and self.state == GameState.PLAYING and self.player:
+            if event.type == pygame.MOUSEBUTTONUP and self.state in [GameState.PLAYING, GameState.DRAGON_FIGHT] and self.player:
                 if event.button == 3:  # Right click release - Charged attack
                     attack_data = self.player.release_charged_attack()
                     if attack_data and attack_data['charge'] >= 25:
@@ -3851,7 +6358,7 @@ class Game:
                         vel_y = math.sin(attack_data['angle']) * speed
                         start_x = self.player.x + self.player.width // 2
                         start_y = self.player.y + self.player.height // 2
-                        self.projectiles.append(Projectile(start_x, start_y, vel_x, vel_y, attack_data['damage'], 'charged_attack'))
+                        self.projectiles.append(Projectile(start_x, start_y, vel_x, vel_y, attack_data['damage'], ProjectileType.CHARGED_ATTACK))
     
     def draw(self):
         # Calculate screen shake offset
@@ -3879,6 +6386,9 @@ class Game:
         elif self.state == GameState.CHARACTER_SELECT:
             self.menu.draw_character_selection(self.screen, self.unlocked_classes)
 
+        elif self.state == GameState.MODE_SELECT:
+            self.menu.draw_mode_selection(self.screen)
+
         elif self.state == GameState.REBIND_KEYS:
             self.menu.draw_rebind_menu(self.screen)
 
@@ -3889,7 +6399,7 @@ class Game:
                 display_progress = self.player.quest_progress
             self.menu.draw_quest_menu(self.screen, self.quests, display_progress, self.unlocked_classes, self.mastery_unlocks, self.shop.items)
 
-        elif self.state == GameState.PLAYING:
+        elif self.state in [GameState.PLAYING, GameState.DRAGON_FIGHT]:
             # Draw particles first (behind entities)
             for p in self.particles:
                 p.draw(self.screen, cam_x, cam_y)
@@ -3924,15 +6434,23 @@ class Game:
             for fire in self.fire_zones:
                 # Animated fire with flickering
                 flicker = int(abs(math.sin(pygame.time.get_ticks() * 0.01)) * 20)
-                fire_color = (255, flicker, 0)
+                if fire.get('type') == 'poison':
+                    fire_color = (0, 200 + flicker, 0)
+                    particle_color = POISON_GREEN
+                elif fire.get('type') == 'acid':
+                    fire_color = (180 + flicker//2, 255, 0)
+                    particle_color = (173, 255, 47)
+                else:
+                    fire_color = (255, flicker, 0)
+                    particle_color = ORANGE
                 pygame.draw.rect(self.screen, fire_color, (fire['rect'].x - cam_x, fire['rect'].y - cam_y, fire['rect'].width, fire['rect'].height))
                 
-                # Add fire particles
+                # Add particles
                 for i in range(3):
                     offset = random.randint(-10, 10)
                     particle_y = fire['rect'].y - random.randint(0, 20)
                     particle_size = random.randint(2, 5)
-                    pygame.draw.circle(self.screen, ORANGE, (fire['rect'].x + fire['rect'].width // 2 + offset - cam_x, particle_y - cam_y), particle_size)
+                    pygame.draw.circle(self.screen, particle_color, (fire['rect'].x + fire['rect'].width // 2 + offset - cam_x, particle_y - cam_y), particle_size)
             
             for laser in self.lasers:
                 if laser['timer'] > laser['fire_frame']:
@@ -3978,6 +6496,15 @@ class Game:
                 timer_str = f"Time: {minutes:02}:{seconds:02}"
             timer_text = self.menu.font_small.render(timer_str, True, WHITE)
             self.screen.blit(timer_text, (SCREEN_WIDTH - timer_text.get_width() - 10, 10))
+            
+            if self.state == GameState.DRAGON_FIGHT:
+                dragon_secs = self.dragon_timer // 60
+                d_min = dragon_secs // 60
+                d_sec = dragon_secs % 60
+                d_timer_str = f"LIMIT: {d_min:02}:{d_sec:02}"
+                d_color = RED if dragon_secs < 60 else YELLOW
+                d_timer_text = self.menu.font_medium.render(d_timer_str, True, d_color)
+                self.screen.blit(d_timer_text, (SCREEN_WIDTH // 2 - d_timer_text.get_width() // 2, 70))
             
             # Platform hazard warning (Phase 2)
             if self.platform_hazard_active and self.boss and self.boss.phase == 2:
@@ -4164,4 +6691,4 @@ class Game:
 if __name__ == "__main__":
     game = Game()
     game.run()
-      
+        
